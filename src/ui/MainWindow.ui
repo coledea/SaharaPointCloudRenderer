@@ -1,0 +1,484 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1920</width>
+    <height>1080</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="acceptDrops">
+   <bool>true</bool>
+  </property>
+  <property name="windowTitle">
+   <string>Sahara</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="../../data/resources.qrc">
+    <normaloff>:/icons/sahara.png</normaloff>:/icons/sahara.png</iconset>
+  </property>
+  <property name="documentMode">
+   <bool>true</bool>
+  </property>
+  <property name="unifiedTitleAndToolBarOnMac">
+   <bool>true</bool>
+  </property>
+  <widget class="QWidget" name="CentralWidget">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="StatusBar"/>
+  <widget class="QDockWidget" name="DW_RendererSettingsPanel">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>100</width>
+     <height>215</height>
+    </size>
+   </property>
+   <property name="windowIcon">
+    <iconset resource="../../data/resources.qrc">
+     <normaloff>:/icons/effect.png</normaloff>:/icons/effect.png</iconset>
+   </property>
+   <property name="windowTitle">
+    <string>Parameters</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents"/>
+  </widget>
+  <widget class="QToolBar" name="TB_Development">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <property name="orientation">
+    <enum>Qt::Orientation::Horizontal</enum>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionCopyFramebufferToClipboard"/>
+   <addaction name="actionSaveFramebufferToFile"/>
+   <addaction name="actionSaveFramebufferToFiles"/>
+   <addaction name="actionReloadShader"/>
+  </widget>
+  <widget class="QDockWidget" name="DW_CameraPathPanel">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>82</width>
+     <height>40</height>
+    </size>
+   </property>
+   <property name="windowTitle">
+    <string>Camera Path</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="cameraPathViewContents">
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="DW_CameraSettingsPanel">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>82</width>
+     <height>24</height>
+    </size>
+   </property>
+   <property name="windowIcon">
+    <iconset resource="../../data/resources.qrc">
+     <normaloff>:/icons/general-video.png</normaloff>:/icons/general-video.png</iconset>
+   </property>
+   <property name="windowTitle">
+    <string>Camera Settings</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+  </widget>
+  <widget class="QDockWidget" name="DW_ScenePanel">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="windowTitle">
+    <string>Point Clouds</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_5"/>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1920</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionOpenFile"/>
+    <addaction name="actionOpenSettings"/>
+    <addaction name="actionExit"/>
+   </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>View</string>
+    </property>
+    <addaction name="actionToggleCameraSettingsPanel"/>
+    <addaction name="actionToggleCameraPathPanel"/>
+    <addaction name="actionToggleRendererSettingsPanel"/>
+    <addaction name="actionToggleScenePanel"/>
+   </widget>
+   <widget class="QMenu" name="menuProfiler">
+    <property name="title">
+     <string>Profiler</string>
+    </property>
+    <addaction name="actionToggleProfiling"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuView"/>
+   <addaction name="menuProfiler"/>
+  </widget>
+  <action name="actionCopyFramebufferToClipboard">
+   <property name="icon">
+    <iconset resource="../../data/resources.qrc">
+     <normaloff>:/icons/export-still.png</normaloff>:/icons/export-still.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Copy Framebuffer to Clipboard</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+C</string>
+   </property>
+  </action>
+  <action name="actionParameterReset">
+   <property name="icon">
+    <iconset resource="../../data/resources.qrc">
+     <normaloff>:/icons/general-reset.png</normaloff>:/icons/general-reset.png</iconset>
+   </property>
+   <property name="text">
+    <string>Reset Parameters</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
+   </property>
+  </action>
+  <action name="actionReloadShader">
+   <property name="icon">
+    <iconset resource="../../data/resources.qrc">
+     <normaloff>:/icons/file-reload.png</normaloff>:/icons/file-reload.png</iconset>
+   </property>
+   <property name="text">
+    <string>Reload Shader</string>
+   </property>
+   <property name="toolTip">
+    <string>Reload shader</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+R</string>
+   </property>
+  </action>
+  <action name="actionDataSetItemAddPointCloud">
+   <property name="icon">
+    <iconset resource="../../data/resources.qrc">
+     <normaloff>:/icons/preset-add.png</normaloff>:/icons/preset-add.png</iconset>
+   </property>
+   <property name="text">
+    <string>Add Point Cloud</string>
+   </property>
+  </action>
+  <action name="actionDataSetItemAddMesh">
+   <property name="icon">
+    <iconset resource="../../data/resources.qrc">
+     <normaloff>:/icons/preset-add.png</normaloff>:/icons/preset-add.png</iconset>
+   </property>
+   <property name="text">
+    <string>Add Mesh</string>
+   </property>
+  </action>
+  <action name="actionDataSetItemAddMeshAsPointCloud">
+   <property name="icon">
+    <iconset resource="../../data/resources.qrc">
+     <normaloff>:/icons/preset-add.png</normaloff>:/icons/preset-add.png</iconset>
+   </property>
+   <property name="text">
+    <string>Add Mesh as PointCloud</string>
+   </property>
+  </action>
+  <action name="actionDataSetItemRemove">
+   <property name="icon">
+    <iconset resource="../../data/resources.qrc">
+     <normaloff>:/icons/preset-remove.png</normaloff>:/icons/preset-remove.png</iconset>
+   </property>
+   <property name="text">
+    <string>Remove</string>
+   </property>
+  </action>
+  <action name="actionDataSetItemsClear">
+   <property name="icon">
+    <iconset resource="../../data/resources.qrc">
+     <normaloff>:/icons/general-cross.png</normaloff>:/icons/general-cross.png</iconset>
+   </property>
+   <property name="text">
+    <string>Clear</string>
+   </property>
+  </action>
+  <action name="actionCameraJumpToFirst">
+   <property name="icon">
+    <iconset resource="../../data/resources.qrc">
+     <normaloff>:/icons/transport-jump-first.png</normaloff>:/icons/transport-jump-first.png</iconset>
+   </property>
+   <property name="text">
+    <string>Jump to first</string>
+   </property>
+  </action>
+  <action name="actionCameraJumpToLast">
+   <property name="icon">
+    <iconset resource="../../data/resources.qrc">
+     <normaloff>:/icons/transport-jump-last.png</normaloff>:/icons/transport-jump-last.png</iconset>
+   </property>
+   <property name="text">
+    <string>Jump to last</string>
+   </property>
+  </action>
+  <action name="actionCameraJumpToPrev">
+   <property name="icon">
+    <iconset resource="../../data/resources.qrc">
+     <normaloff>:/icons/transport-jump-previous.png</normaloff>:/icons/transport-jump-previous.png</iconset>
+   </property>
+   <property name="text">
+    <string>Jump to previous</string>
+   </property>
+  </action>
+  <action name="actionCameraJumpToNext">
+   <property name="icon">
+    <iconset resource="../../data/resources.qrc">
+     <normaloff>:/icons/transport-jump-next.png</normaloff>:/icons/transport-jump-next.png</iconset>
+   </property>
+   <property name="text">
+    <string>Jump to next</string>
+   </property>
+  </action>
+  <action name="actionTransportFastBackward">
+   <property name="icon">
+    <iconset resource="../../data/resources.qrc">
+     <normaloff>:/icons/transport-fast-backward.png</normaloff>:/icons/transport-fast-backward.png</iconset>
+   </property>
+   <property name="text">
+    <string>Fast backward</string>
+   </property>
+  </action>
+  <action name="actionTransportFastForward">
+   <property name="icon">
+    <iconset resource="../../data/resources.qrc">
+     <normaloff>:/icons/transport-fast-forward.png</normaloff>:/icons/transport-fast-forward.png</iconset>
+   </property>
+   <property name="text">
+    <string>Fast forward</string>
+   </property>
+  </action>
+  <action name="actionCameraAnimationPlayBackwards">
+   <property name="icon">
+    <iconset resource="../../data/resources.qrc">
+     <normaloff>:/icons/transport-play-backward.png</normaloff>:/icons/transport-play-backward.png</iconset>
+   </property>
+   <property name="text">
+    <string>Play backward</string>
+   </property>
+  </action>
+  <action name="actionCameraAnimationPlayForward">
+   <property name="icon">
+    <iconset resource="../../data/resources.qrc">
+     <normaloff>:/icons/transport-play-forward.png</normaloff>:/icons/transport-play-forward.png</iconset>
+   </property>
+   <property name="text">
+    <string>Play forward</string>
+   </property>
+  </action>
+  <action name="actionRecordCameraPath">
+   <property name="icon">
+    <iconset resource="../../data/resources.qrc">
+     <normaloff>:/icons/transport-record.png</normaloff>:/icons/transport-record.png</iconset>
+   </property>
+   <property name="text">
+    <string>Record</string>
+   </property>
+  </action>
+  <action name="actionCameraAnimationPause">
+   <property name="icon">
+    <iconset resource="../../data/resources.qrc">
+     <normaloff>:/icons/transport-pause.png</normaloff>:/icons/transport-pause.png</iconset>
+   </property>
+   <property name="text">
+    <string>Pause</string>
+   </property>
+  </action>
+  <action name="actionCameraAnimationStop">
+   <property name="icon">
+    <iconset resource="../../data/resources.qrc">
+     <normaloff>:/icons/transport-stop.png</normaloff>:/icons/transport-stop.png</iconset>
+   </property>
+   <property name="text">
+    <string>Stop</string>
+   </property>
+  </action>
+  <action name="actionCameraAnimationLoop">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../../data/resources.qrc">
+     <normaloff>:/icons/general-loop.png</normaloff>:/icons/general-loop.png</iconset>
+   </property>
+   <property name="text">
+    <string>Loop</string>
+   </property>
+  </action>
+  <action name="actionSaveFramebufferToFile">
+   <property name="icon">
+    <iconset resource="../../data/resources.qrc">
+     <normaloff>:/icons/video-export-frame.png</normaloff>:/icons/video-export-frame.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Save Framebuffer to File</string>
+   </property>
+   <property name="toolTip">
+    <string>Save Framebuffer to File.</string>
+   </property>
+  </action>
+  <action name="actionSaveFramebufferToFiles">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../../data/resources.qrc">
+     <normaloff>:/icons/video-export-frames.png</normaloff>:/icons/video-export-frames.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Save Framebuffer to Files</string>
+   </property>
+   <property name="toolTip">
+    <string>Save Framebuffer to Files.</string>
+   </property>
+  </action>
+  <action name="actionOpenFile">
+   <property name="text">
+    <string>Open</string>
+   </property>
+  </action>
+  <action name="actionOpenSettings">
+   <property name="text">
+    <string>Settings</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>Exit</string>
+   </property>
+  </action>
+  <action name="actionToggleCameraSettingsPanel">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Camera Settings Panel</string>
+   </property>
+  </action>
+  <action name="actionToggleCameraPathPanel">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Camera Path Panel</string>
+   </property>
+  </action>
+  <action name="actionToggleRendererSettingsPanel">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Renderer Settings Panel</string>
+   </property>
+  </action>
+  <action name="actionToggleScenePanel">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Scene Panel</string>
+   </property>
+  </action>
+  <action name="actionToggleProfiling">
+   <property name="text">
+    <string>Start Profiling</string>
+   </property>
+   <property name="shortcut">
+    <string>F2</string>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="../../data/resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>

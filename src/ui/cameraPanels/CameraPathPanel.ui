@@ -1,0 +1,434 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>CameraPathPanel</class>
+ <widget class="QWidget" name="CameraPathPanel">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>281</width>
+    <height>744</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="spacing">
+    <number>3</number>
+   </property>
+   <property name="sizeConstraint">
+    <enum>QLayout::SetMaximumSize</enum>
+   </property>
+   <property name="leftMargin">
+    <number>3</number>
+   </property>
+   <property name="topMargin">
+    <number>3</number>
+   </property>
+   <property name="rightMargin">
+    <number>3</number>
+   </property>
+   <property name="bottomMargin">
+    <number>3</number>
+   </property>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <property name="spacing">
+      <number>3</number>
+     </property>
+     <item>
+      <widget class="QToolButton" name="TB_ItemAdd">
+       <property name="toolTip">
+        <string>Add new keyframe</string>
+       </property>
+       <property name="statusTip">
+        <string>Add new keyframe</string>
+       </property>
+       <property name="whatsThis">
+        <string>Add new keyframe</string>
+       </property>
+       <property name="text">
+        <string>Add new keyframe</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../../../data/resources.qrc">
+         <normaloff>:/icons/preset-add.png</normaloff>:/icons/preset-add.png</iconset>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="TB_ItemRemove">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="toolTip">
+        <string>Remove keyframe</string>
+       </property>
+       <property name="statusTip">
+        <string>Remove keyframe</string>
+       </property>
+       <property name="whatsThis">
+        <string>Remove keyframe</string>
+       </property>
+       <property name="text">
+        <string>Remove keyframe</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../../../data/resources.qrc">
+         <normaloff>:/icons/preset-remove.png</normaloff>:/icons/preset-remove.png</iconset>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="TB_Clear">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="toolTip">
+        <string>Clear keyframes</string>
+       </property>
+       <property name="statusTip">
+        <string>Clear keyframes</string>
+       </property>
+       <property name="whatsThis">
+        <string>Clear keyframes</string>
+       </property>
+       <property name="text">
+        <string>Clear keyframes</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../../../data/resources.qrc">
+         <normaloff>:/icons/general-cross.png</normaloff>:/icons/general-cross.png</iconset>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QToolButton" name="TB_PathExport">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="toolTip">
+        <string>Export keyframes.</string>
+       </property>
+       <property name="statusTip">
+        <string>Export keyframes.</string>
+       </property>
+       <property name="whatsThis">
+        <string>Export keyframes.</string>
+       </property>
+       <property name="text">
+        <string>Export keyframes.</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../../../data/resources.qrc">
+         <normaloff>:/icons/file-export.png</normaloff>:/icons/file-export.png</iconset>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="TB_PathImport">
+       <property name="toolTip">
+        <string>Import keyframes.</string>
+       </property>
+       <property name="statusTip">
+        <string>Import keyframes.</string>
+       </property>
+       <property name="whatsThis">
+        <string>Import keyframes.</string>
+       </property>
+       <property name="text">
+        <string>Import keyframes.</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../../../data/resources.qrc">
+         <normaloff>:/icons/file-import.png</normaloff>:/icons/file-import.png</iconset>
+       </property>
+       <property name="autoRaise">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QListWidget" name="LW_CameraPath">
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Plain</enum>
+     </property>
+     <property name="selectionMode">
+      <enum>QAbstractItemView::SingleSelection</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="QToolButton" name="TB_cameraPlay">
+       <property name="toolTip">
+        <string>Play camera path</string>
+       </property>
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../../../data/resources.qrc">
+         <normaloff>:/icons/transport-play-forward.png</normaloff>:/icons/transport-play-forward.png</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="TB_cameraPlayBackwards">
+       <property name="toolTip">
+        <string>Play camera path backwards</string>
+       </property>
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../../../data/resources.qrc">
+         <normaloff>:/icons/transport-play-backward.png</normaloff>:/icons/transport-play-backward.png</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="TB_cameraPause">
+       <property name="toolTip">
+        <string>Pause camera path playback</string>
+       </property>
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../../../data/resources.qrc">
+         <normaloff>:/icons/transport-pause.png</normaloff>:/icons/transport-pause.png</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="TB_cameraStop">
+       <property name="toolTip">
+        <string>Stop camera path playback</string>
+       </property>
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../../../data/resources.qrc">
+         <normaloff>:/icons/transport-stop.png</normaloff>:/icons/transport-stop.png</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="TB_cameraLoop">
+       <property name="toolTip">
+        <string>Toggle camera path looping</string>
+       </property>
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../../../data/resources.qrc">
+         <normaloff>:/icons/general-loop.png</normaloff>:/icons/general-loop.png</iconset>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="Line" name="line">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="TB_cameraJumpToPrev">
+       <property name="toolTip">
+        <string>Jump to previous keyframe</string>
+       </property>
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../../../data/resources.qrc">
+         <normaloff>:/icons/transport-jump-previous.png</normaloff>:/icons/transport-jump-previous.png</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="TB_cameraJumpToNext">
+       <property name="toolTip">
+        <string>Jump to next keyframe</string>
+       </property>
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../../../data/resources.qrc">
+         <normaloff>:/icons/transport-jump-next.png</normaloff>:/icons/transport-jump-next.png</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="TB_cameraJumpToFirst">
+       <property name="toolTip">
+        <string>Jump to first keyframe</string>
+       </property>
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../../../data/resources.qrc">
+         <normaloff>:/icons/transport-jump-first.png</normaloff>:/icons/transport-jump-first.png</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="TB_cameraJumpToLast">
+       <property name="toolTip">
+        <string>Jump to last keyframe</string>
+       </property>
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../../../data/resources.qrc">
+         <normaloff>:/icons/transport-jump-last.png</normaloff>:/icons/transport-jump-last.png</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="Line" name="line_2">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="TB_profiling">
+       <property name="text">
+        <string>...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../../../data/resources.qrc">
+         <normaloff>:/icons/file-quit.png</normaloff>:/icons/file-quit.png</iconset>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="GB_KeyFrame">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="title">
+      <string>&amp;Keyframe:</string>
+     </property>
+     <property name="flat">
+      <bool>false</bool>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <property name="leftMargin">
+       <number>3</number>
+      </property>
+      <property name="topMargin">
+       <number>3</number>
+      </property>
+      <property name="rightMargin">
+       <number>3</number>
+      </property>
+      <property name="bottomMargin">
+       <number>3</number>
+      </property>
+      <property name="spacing">
+       <number>3</number>
+      </property>
+      <item row="0" column="0">
+       <widget class="QLabel" name="L_Duration">
+        <property name="text">
+         <string>Duration (ms):</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QSpinBox" name="SB_Duration">
+        <property name="minimum">
+         <number>1</number>
+        </property>
+        <property name="maximum">
+         <number>10000</number>
+        </property>
+        <property name="singleStep">
+         <number>100</number>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="L_Easing">
+        <property name="text">
+         <string>Easing:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QComboBox" name="CB_Easing"/>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="../../../data/resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>

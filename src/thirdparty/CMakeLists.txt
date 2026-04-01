@@ -1,0 +1,2 @@
+add_library(TINYPLY INTERFACE)
+target_include_directories(TINYPLY INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)

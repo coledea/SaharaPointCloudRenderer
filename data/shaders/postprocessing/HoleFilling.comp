@@ -1,0 +1,54 @@
+#version 460 core
+layout (local_size_x = 32, local_size_y = 32) in;
+
+layout(rgba8, binding=0) readonly restrict uniform image2D u_input_color_texture;
+layout(rgba8, binding=1) writeonly restrict uniform image2D u_output_color_texture;
+uniform sampler2D u_depth;
+
+void main(void)
+{
+    ivec2 texture_size = imageSize(u_input_color_texture);
+    if(gl_GlobalInvocationID.x >= texture_size.x || gl_GlobalInvocationID.y >= texture_size.y)
+        return;
+
+    ivec2 coords = ivec2(gl_GlobalInvocationID.xy);
+    vec4 input_color = imageLoad(u_input_color_texture, coords);
+    if(texelFetch(u_depth, coords, 0).r < 1.0f)
+    {
+        imageStore(u_output_color_texture, coords, input_color);
+        return;
+    }
+
+    ivec2 min_pixel;
+    float min_depth = 1.0;
+    
+    int count = 0;
+    for(int i = -1; i <= 1; i++)
+    {
+    for(int j = -1; j <= 1; j++)
+        {
+           ivec2 neighbor_coords = coords + ivec2(i,j);
+           if(neighbor_coords.x >= 0 && neighbor_coords.x < texture_size.x && neighbor_coords.y >= 0 && neighbor_coords.y < texture_size.y)
+           {
+                float neighbor_depth = texelFetch(u_depth, neighbor_coords, 0).r;
+                if(neighbor_depth < 1.0f)
+                {
+                    count++;
+                }
+                if(neighbor_depth < min_depth)
+                {
+                    min_depth = neighbor_depth;
+                    min_pixel = neighbor_coords;
+                }
+           }
+        }
+     }
+
+     if(count > 5)   // rough approximation of the masks used by Linsen and Rosenthal
+     {
+        imageStore(u_output_color_texture, coords, imageLoad(u_input_color_texture, min_pixel));
+     }
+     else{
+        imageStore(u_output_color_texture, coords, input_color);
+     }
+}
