@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import csv
+from itertools import chain
 import warnings
 warnings.filterwarnings('error')
 import argparse
@@ -9,8 +10,6 @@ parser = argparse.ArgumentParser(prog='Script for aggregating the results of the
 parser.add_argument('input_folder', help='Folder containing the raw measurements. The expected folder hierarchy is storage devices - datasets - configurations.')
 parser.add_argument('output_folder', help='Folder to write the aggregated results into.')
 
-device_names = {"external_hdd" : "External HDD", "nvme_ssd" : "NVME SSD", "external_ssd" : "External SSD"}
-scene_names = {"hessigheim" : "HH", "liphestream" : "LS", "schneeferner" : "SF", "kijkduin" : "KD", "noordwijk" : "NW"}
 scene_display_names = {"hessigheim" : "Hessigheim3D", "liphestream" : "LiPheStream", "schneeferner" : "Schneeferner", "kijkduin" : "Kijkduin", "noordwijk" : "Noordwijk"}
 
 timestamp_ranges = [0, 1, 5, 10, 25]
@@ -47,6 +46,26 @@ def write_flattened(data, output_path):
 
     outfile.close()
 
+def group_plot_header(scene_name):
+    header = "\\nextgroupplot[\nylabel={\\strut " + scene_display_names[scene_name] + "}"
+    if scene_name == "noordwijk":
+        header += ",\nxtick style = {draw = none},\nlegend to name=grouplegend"
+    header += "\n]\n"
+    return header
+
+def get_boxplot_box_pgfstring(data):
+    data = np.sort(data)
+    median = np.median(data)
+    lower_quartile = np.quantile(data, 0.25)
+    upper_quartile = np.quantile(data, 0.75)
+    iqr = upper_quartile - lower_quartile
+    lower_whisker = np.min(np.compress(data >= lower_quartile - 1.5 * iqr, data))
+    upper_whisker = np.max(np.compress(data <= upper_quartile + 1.5 * iqr, data))
+
+    result = "\\addplot+ [boxplot prepared = {lower whisker=" + str(lower_whisker) + ", lower quartile=" + str(lower_quartile)
+    result += ", median=" + str(median) + ", upper quartile=" + str(upper_quartile) + ", upper whisker=" + str(upper_whisker)
+    result += "}] coordinates {};\n\n"
+    return result
 
 args = parser.parse_args()
 output_root_folder = args.output_folder
@@ -55,7 +74,8 @@ for device in os.scandir(args.input_folder):
     if not device.is_dir():
         continue
 
-    frametimes_boxplots = ""
+    frametimes_boxplots = {}
+    completion_times_boxplots = {}
 
     for scene in os.scandir(device.path):
         header = []
@@ -63,11 +83,10 @@ for device in os.scandir(args.input_folder):
         avg_frame_completion_per_distance = []
         split_frametime = []
 
-        # group plot header for frametime boxplot
-        frametimes_boxplots += "\\nextgroupplot[\nylabel={\\strut " + scene_display_names[scene.name] + "}"
-        if scene.name == "noordwijk":
-            frametimes_boxplots += ",\nxtick style = {draw = none},\nlegend to name=grouplegend"
-        frametimes_boxplots += "\n]\n"
+        # group plot header for boxplots
+        scene_header = group_plot_header(scene.name)
+        frametimes_boxplots[scene.name] = scene_header
+        completion_times_boxplots[scene.name] = scene_header
 
         for idx_range, _ in enumerate(timestamp_ranges):
             for idx_falloff, timestamp_falloff in enumerate(timestamp_falloffs):
@@ -83,18 +102,18 @@ for device in os.scandir(args.input_folder):
                 header.append("config-" + str(configuration_idx))
 
                 # Load raw measurements
-                compute_priorities_time = np.average(np.loadtxt(os.path.join(input_folder_path, "Compute Priorities GPU.txt"), delimiter=";", dtype=int)[:,1])
-                sort_time = np.average(np.loadtxt(os.path.join(input_folder_path, "Update Priorities CPU and Sort.txt"), delimiter=";", dtype=int)[:,1])
-                memory_management_time = np.average(np.loadtxt(os.path.join(input_folder_path, "Update Buffers.txt"), delimiter=";", dtype=int)[:,1])
-                rasterization_time = np.average(np.loadtxt(os.path.join(input_folder_path, "Rasterization.txt"), delimiter=";", dtype=int)[:,1])
+                compute_priorities_time = np.average(np.loadtxt(os.path.join(input_folder_path, "Compute Priorities GPU.txt"), delimiter=";", dtype=np.uint64)[:,1])
+                sort_time = np.average(np.loadtxt(os.path.join(input_folder_path, "Update Priorities CPU and Sort.txt"), delimiter=";", dtype=np.uint64)[:,1])
+                memory_management_time = np.average(np.loadtxt(os.path.join(input_folder_path, "Update Buffers.txt"), delimiter=";", dtype=np.uint64)[:,1])
+                rasterization_time = np.average(np.loadtxt(os.path.join(input_folder_path, "Rasterization.txt"), delimiter=";", dtype=np.uint64)[:,1])
                 full_frametime = compute_priorities_time + sort_time + memory_management_time + rasterization_time
                 split_frametime.append([float(compute_priorities_time) / float(full_frametime), float(sort_time) / float(full_frametime), float(memory_management_time) / float(full_frametime), float(rasterization_time) / float(full_frametime)])
 
-                frametimes = np.loadtxt(os.path.join(input_folder_path, "Whole_frame.txt"), delimiter=";", dtype=int)[:,1]
+                frametimes = np.loadtxt(os.path.join(input_folder_path, "Whole_frame.txt"), delimiter=";", dtype=np.uint64)[:,1]
                 cpu_misses = np.loadtxt(os.path.join(input_folder_path, "CPU_buffer_misses.txt"), delimiter=";", dtype=np.ulonglong)
                 cpu_misses = fix_overflow(cpu_misses)
 
-                cpu_hits = np.loadtxt(os.path.join(input_folder_path, "CPU_buffer_hits.txt"), delimiter=";", dtype=int)[:,1]
+                cpu_hits = np.loadtxt(os.path.join(input_folder_path, "CPU_buffer_hits.txt"), delimiter=";", dtype=np.uint64)[:,1]
                 nodes_to_render = cpu_hits + cpu_misses[:,1]
                 
                 timestamp_changes = np.loadtxt(os.path.join(input_folder_path, "timestamp_changes.txt"), delimiter=";", dtype=np.ulonglong)
@@ -146,17 +165,12 @@ for device in os.scandir(args.input_folder):
                         avg_frame_completion_per_distance[-1].append(np.nan)
 
                 # Frametime boxplot
-                frametimes = np.sort(frametimes.astype(float) / 1000)
-                median = np.median(frametimes)
-                lower_quartile = np.quantile(frametimes, 0.25)
-                upper_quartile = np.quantile(frametimes, 0.75)
-                iqr = upper_quartile - lower_quartile
-                lower_whisker = np.min(np.compress(frametimes >= lower_quartile - 1.5 * iqr, frametimes))
-                upper_whisker = np.max(np.compress(frametimes <= upper_quartile + 1.5 * iqr, frametimes))
+                frametimes = frametimes.astype(float) / 1000
+                frametimes_boxplots[scene.name] += get_boxplot_box_pgfstring(frametimes)
 
-                frametimes_boxplots += "\\addplot+ [boxplot prepared = {lower whisker=" + str(lower_whisker) + ", lower quartile=" + str(lower_quartile)
-                frametimes_boxplots += ", median=" + str(median) + ", upper quartile=" + str(upper_quartile) + ", upper whisker=" + str(upper_whisker)
-                frametimes_boxplots += "}] coordinates {};\n\n"
+                # Completion time boxplot
+                completion_times = np.array(list(chain.from_iterable(completion_time_per_distance))).astype(float)
+                completion_times_boxplots[scene.name] += get_boxplot_box_pgfstring(completion_times)
 
 
         # cut invalid rows (no jumps to distance 0, only 3 possible jump distances in Hessigheim)
@@ -166,6 +180,8 @@ for device in os.scandir(args.input_folder):
         avg_available_node_share_per_distance = np.round((np.array(avg_available_node_share_per_distance).T[1:valid_rows] * 100))  # skip first row (no jumps in distance 0)
         avg_frame_completion_per_distance = np.array(avg_frame_completion_per_distance).T[1:valid_rows]
         
+        np.savetxt(os.path.join(output_folder, "completion_times_per_distance_absolute.csv"), avg_frame_completion_per_distance, fmt="%d", delimiter=",", comments="", header=",".join(header))
+
         # since frame completion strongly depends on the specific timestamps jumped to (their size), we normalize by row maximum, i.e., maximum time for a certain switch distance
         frame_completion_max = np.max(avg_frame_completion_per_distance, axis=1, keepdims=True)
         avg_frame_completion_per_distance = (1.0 - (avg_frame_completion_per_distance.astype(float) / frame_completion_max.astype(float))) * 100
@@ -181,4 +197,9 @@ for device in os.scandir(args.input_folder):
 
 
     with open(os.path.join(output_root_folder, device.name, "frametimes_boxplots.txt"), "w") as f:
-        f.write(frametimes_boxplots)
+        for scene in scene_display_names:
+            f.write(frametimes_boxplots[scene])
+    
+    with open(os.path.join(output_root_folder, device.name, "completion_time_boxplots.txt"), "w") as f:
+        for scene in scene_display_names:
+            f.write(completion_times_boxplots[scene])
