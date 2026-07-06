@@ -106,10 +106,10 @@ If both oneTBB and libstdc++ with parallel algorithm support are present on your
     title = {Out-of-Core Rendering of Multi-Temporal Point Clouds},
     booktitle = {Proceedings of the 26th Eurographics Symposium on Parallel Graphics and Visualization (EGPGV)},
     year = {2026},
-    pages = {TBD},
-    doi = {TBD}
+    doi = {10.2312/egpgv.20261002}
 }
 ```
+
 
 ## Acknowledgements
 This renderer was primarily developed by Ole Wegen. Special thanks go to Matthias Trapp for his work on the initial version of the renderer, from which several UI components and the icon design were retained; to Sandro Steeger and Andreas Franke for Linux-specific fixes; and to Jorge Ciprián-Sánchez for his contributions to PLY loading functionality.
