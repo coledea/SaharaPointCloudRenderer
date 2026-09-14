@@ -4,7 +4,7 @@ This branch contains the version of the Sahara Point Cloud Renderer used for eva
 **Quantitative Evaluation of Comparative Visualization Methods for Change Identification in Multi-Temporal Point Clouds**, Wegen et al., 2026.
 
 For the most recent version of the renderer, please use the [`main`](../../) branch. It omits several paper-specific features, such as the user-study overlay, and reflects the current state of development.
-Additional supplementary material is available at [Zenodo](https://zenodo.org/records/21379345).
+Additional supplementary material is available at [Zenodo](https://doi.org/10.5281/zenodo.21379344).
 
 
 ## Setup Instructions
