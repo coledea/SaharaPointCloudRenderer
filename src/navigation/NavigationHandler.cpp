@@ -1,5 +1,7 @@
 #include "NavigationHandler.h"
 
+#include "ui/RenderWindow.h"
+
 namespace sahara::navigation
 {
 
@@ -9,11 +11,12 @@ NavigationHandler::NavigationHandler(Camera* camera)
 	, m_animated_path_navigation(camera)
 	, m_current_navigation(&m_orbital_navigation)
 	, m_next_navigation(&m_orbital_navigation)
-	, m_last_mouse_position(0, 0)
+	, m_last_mouse_position(0.0f, 0.0f)
 	, m_left_mouse_button_pressed(false)
 	, m_right_mouse_button_pressed(false)
 	, m_move_speed(50.0f)
 	, m_look_speed(10.0f)
+	, m_event_cache(ui::RenderWindow::s_event_cache)
 {
 	connect(&m_animated_path_navigation, &AnimatedPathNavigation::animationStopped, this, &NavigationHandler::onAnimatedPathNavigationStopped);
 }
@@ -89,7 +92,35 @@ bool NavigationHandler::isAnimatedPathNavigationActive()
 	return dynamic_cast<AnimatedPathNavigation*>(m_current_navigation) != nullptr;
 }
 
-void NavigationHandler::mousePressEvent(QPoint pos, Qt::MouseButton button)
+void NavigationHandler::update()
+{
+	if (m_event_cache.isKeyPressed(Qt::Key_Shift) || m_event_cache.isKeyPressed(Qt::Key_Control))
+	{
+		return;
+	}
+
+	if (m_event_cache.didMousePressOccur())
+	{
+		mousePressEvent(m_event_cache.getMousePosition(), m_event_cache.getPressedButton());
+	}
+
+	if (m_event_cache.didMouseReleaseOccur())
+	{
+		mouseReleaseEvent(m_event_cache.getMousePosition(), m_event_cache.getReleasedButton());
+	}
+
+	if (m_event_cache.didMouseMoveOccur())
+	{
+		mouseMoveEvent(m_event_cache.getMousePosition());
+	}
+
+	if (m_event_cache.didWheelOccur())
+	{
+		wheelEvent(m_event_cache.getWheelPixelDelta(), m_event_cache.getWheelAngleDelta());
+	}
+}
+
+void NavigationHandler::mousePressEvent(QPointF pos, Qt::MouseButton button)
 {
 	if (button == Qt::LeftButton)
 	{
@@ -103,7 +134,7 @@ void NavigationHandler::mousePressEvent(QPoint pos, Qt::MouseButton button)
 	m_last_mouse_position = pos;
 }
 
-void NavigationHandler::mouseReleaseEvent(QPoint pos, Qt::MouseButton button)
+void NavigationHandler::mouseReleaseEvent(QPointF pos, Qt::MouseButton button)
 {
 	if (button == Qt::LeftButton)
 	{
@@ -117,7 +148,7 @@ void NavigationHandler::mouseReleaseEvent(QPoint pos, Qt::MouseButton button)
 	m_last_mouse_position = pos;
 }
 
-void NavigationHandler::mouseMoveEvent(QPoint pos)
+void NavigationHandler::mouseMoveEvent(QPointF pos)
 {
 	if (m_left_mouse_button_pressed)
 	{
@@ -131,16 +162,16 @@ void NavigationHandler::mouseMoveEvent(QPoint pos)
 	m_last_mouse_position = pos;
 }
 
-void NavigationHandler::wheelEvent(const QWheelEvent& e)
+void NavigationHandler::wheelEvent(std::optional<QPoint> pixelDelta, QPoint angleDelta)
 {
 	float delta = 0.0f;
-	if (e.hasPixelDelta())
+	if (pixelDelta)
 	{
-		delta = e.pixelDelta().y();
+		delta = pixelDelta->y();
 	}
 	else
 	{
-		delta = static_cast<float>(e.angleDelta().y() / 120);
+		delta = static_cast<float>(angleDelta.y() / 120);
 	}
 	m_current_navigation->onWheelMove(delta, m_move_speed, m_look_speed);
 }

@@ -1,5 +1,7 @@
 #include "Camera.h"
 
+#include <algorithm>
+
 namespace sahara::navigation
 {
 
@@ -224,13 +226,27 @@ void Camera::translateWorld(const QVector3D& translation)
 
 void Camera::zoom(float value)
 {
-	float forward_length = (m_camera_specification.center - m_camera_specification.eye).length();
-	if (forward_length > value)
+	if (qFuzzyIsNull(value))
 	{
-		auto translation = value * forward();
-		m_camera_specification.eye += translation;
-		m_eye_move_direction = m_eye_move_direction * m_movement_smoothing_factor + translation * (1.0f - m_movement_smoothing_factor);
+		return;
 	}
+
+	constexpr float minimum_orbit_distance = 0.001f;
+	const QVector3D forward_direction = forward();
+	const float forward_length = (m_camera_specification.center - m_camera_specification.eye).length();
+	const QVector3D eye_translation = value * forward_direction;
+
+	m_camera_specification.eye += eye_translation;
+	m_eye_move_direction = m_eye_move_direction * m_movement_smoothing_factor + eye_translation * (1.0f - m_movement_smoothing_factor);
+
+	if (value > 0.0f && forward_length - value < minimum_orbit_distance) // if eye and center would collapse into one point, move the center
+	{
+		const float center_translation_length = value - std::max(forward_length - minimum_orbit_distance, 0.0f);
+		const QVector3D center_translation = center_translation_length * forward_direction;
+		m_camera_specification.center += center_translation;
+		m_center_move_direction = m_center_move_direction * m_movement_smoothing_factor + center_translation * (1.0f - m_movement_smoothing_factor);
+	}
+
 	m_view_matrix.invalidate();
 	m_view_projection_matrix.invalidate();
 }

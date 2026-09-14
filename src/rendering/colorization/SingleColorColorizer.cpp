@@ -1,5 +1,6 @@
 #include "SingleColorColorizer.h"
 
+#include "ColorizerSpecifications.h"
 #include "utils/ShaderUtilities.h"
 
 #include <QColor>
@@ -7,8 +8,9 @@
 namespace sahara::rendering
 {
 
-SingleColorColorizer::SingleColorColorizer(OpenGLContext* opengl_context) noexcept
+SingleColorColorizer::SingleColorColorizer(OpenGLContext* opengl_context, AbstractPointCloudProvider* provider) noexcept
 	: AbstractColorizer(opengl_context)
+	, m_pointcloud_provider(provider)
 {
 	m_original_color_factor_parameter = std::make_unique<RangeParameter<float>>("Original Color", 0.0, 0.0, 1.0, 0.001);
 	connect(m_original_color_factor_parameter.get(), &RangeParameter<float>::valueChanged, this, &SingleColorColorizer::onOriginalColorFactorChanged);
@@ -17,6 +19,8 @@ SingleColorColorizer::SingleColorColorizer(OpenGLContext* opengl_context) noexce
 	m_color_parameter = std::make_unique<Parameter<QColor>>("Color", QColor::fromRgbF(0.5f, 0.5f, 0.5f, 1.0f));
 	connect(m_color_parameter.get(), &Parameter<QColor>::valueChanged, this, &SingleColorColorizer::onColorChanged);
 	m_parameters.push_back(m_color_parameter.get());
+
+	reloadShaderSpecificationsFromDisk();
 }
 
 SingleColorColorizer::~SingleColorColorizer()
@@ -25,8 +29,22 @@ SingleColorColorizer::~SingleColorColorizer()
 
 void SingleColorColorizer::reloadShaderSpecificationsFromDisk()
 {
-	m_shader_specifications.colorization_shader_code = utils::ShaderStringsFactory::readShaderFile("./data/shaders/SingleColorColorizer.glsl");
-	m_shader_specifications.vertex_shader_outputs = { { geometry::AttributeType::Color, geometry::AttributeSemantic::Color } };
+	m_final_shader_code = utils::ShaderStringsFactory::readShaderFile("./data/shaders/SingleColorColorizer.glsl");
+
+	if (m_pointcloud_provider->hasAttribute(geometry::AttributeSemantic::Color))
+	{
+		m_final_shader_code.insert(0, "#define USE_COLOR\n");
+	}
+}
+
+std::set<geometry::AttributeSpecification> SingleColorColorizer::requestedAttributes() const
+{
+	auto requested_attributes = ColorizerSpecifications::Specifications.at(type()).necessaryAttributes();
+	if (m_pointcloud_provider->hasAttribute(geometry::AttributeSemantic::Color))
+	{
+		requested_attributes.insert({ geometry::AttributeType::Color, geometry::AttributeSemantic::Color });
+	}
+	return requested_attributes;
 }
 
 void SingleColorColorizer::setCompiledShaderProgram(QOpenGLShaderProgram* shader_program)
@@ -41,6 +59,11 @@ void SingleColorColorizer::setCompiledShaderProgram(QOpenGLShaderProgram* shader
 ColorizerType SingleColorColorizer::type() const noexcept
 {
 	return ColorizerType::SingleColor;
+}
+
+std::set<geometry::AttributeSpecification> SingleColorColorizer::necessaryAttributes()
+{
+	return {};
 }
 
 void SingleColorColorizer::onColorChanged()

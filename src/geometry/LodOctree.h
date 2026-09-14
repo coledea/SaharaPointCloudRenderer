@@ -16,13 +16,6 @@ public:
 	const BoundingBox& boundingBox() const override;
 	void configureHierarchyPriority(bool use_hierarchy, float factor) noexcept;
 
-	void setPriorityProjectionFunction(NodePriorityProjectionFunction f);
-	void setPriorityDistanceFunction(NodePriorityDistanceFunction f);
-	void setPriorityProjectionFactor(float factor);
-	void setPriorityDistanceFactor(float factor);
-	void setPriorityCentralityFactor(float factor);
-	void setPriorityUseRecency(bool use_recency);
-
 private:
 	std::unique_ptr<LodOctreeNode> m_root;
 	bool m_use_hierarchy_priority;

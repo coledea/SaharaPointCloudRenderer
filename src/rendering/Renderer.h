@@ -2,7 +2,6 @@
 
 #include "Framebuffer.h"
 #include "RendererModuleTypes.h"
-#include "ShaderProgramFactory.h"
 #include "navigation/Camera.h"
 #include "rendering/colorization/AbstractColorizer.h"
 #include "rendering/pointcloudProviders/AbstractPointCloudProvider.h"
@@ -21,7 +20,7 @@ public:
 
 	void render();
 
-	void reloadShader(); // loads all sources again from disk and compiles the shader
+	void reloadShader();
 
 	bool isModuleTypeSupported(RendererModule module, int module_type);
 	void changeModule(RendererModule module, int module_type);
@@ -37,6 +36,11 @@ public:
 	std::vector<AbstractParameter*>& lastPostprocessorParameters() const;
 
 	int moduleType(RendererModule module) const;
+	std::vector<AbstractRasterizer::AnnotationViewport> annotationViewports() const;
+
+signals:
+	void modulesChanged();
+	void postprocessorRemoved(int index);
 
 protected:
 	OpenGLContext* m_opengl_context;
@@ -45,12 +49,11 @@ protected:
 	AbstractPointCloudProvider* m_pointcloud_provider;
 
 	std::unique_ptr<AbstractRasterizer> m_rasterizer;
-	std::unique_ptr<AbstractColorizer> m_colorizer;
 	PostprocessorPipeline m_postprocessor_pipeline;
-	ShaderProgramFactory m_shader_program_factory;
-	std::unique_ptr<QOpenGLShaderProgram> m_shader_program;
 
-	void recompileShader(); // compiles the shader without loading the sources from disk
+private:
+	bool rasterizerFullfillsRequirements(std::set<geometry::AttributeSpecification> requirements);
+	void postprocessorInputsUpdated();
 };
 
 }

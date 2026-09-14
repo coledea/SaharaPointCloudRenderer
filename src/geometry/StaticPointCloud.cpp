@@ -40,10 +40,42 @@ bool StaticPointCloud::hasAttribute(AttributeSemantic semantic) const
 	return m_attributes.find(semantic) != m_attributes.end();
 }
 
+bool StaticPointCloud::hasAttribute(const AttributeMetadata& metadata) const
+{
+	return std::ranges::any_of(m_attributes, [&metadata](const auto& attribute) { return *attribute.second.metadata == metadata; });
+}
+
 const AbstractAttributeData* StaticPointCloud::attributeData(AttributeSemantic semantic) const
 {
 	assert(hasAttribute(semantic) && "Requested attribute does not exist");
 	return m_attributes.at(semantic).data.get();
+}
+
+const AbstractAttributeData* StaticPointCloud::attributeData(const AttributeMetadata& reference_metadata) const
+{
+	assert(hasAttribute(reference_metadata) && "Requested attribute does not exist");
+	auto it = std::find_if(m_attributes.begin(), m_attributes.end(), [&reference_metadata](const auto& attribute) { return *attribute.second.metadata == reference_metadata; });
+	return it->second.data.get();
+}
+
+const AttributeMetadata* StaticPointCloud::attributeMetadata(AttributeSemantic semantic) const
+{
+	if (!hasAttribute(semantic))
+	{
+		return nullptr;
+	}
+
+	return m_attributes.at(semantic).metadata.get();
+}
+
+const AttributeMetadata* StaticPointCloud::attributeMetadata(const AttributeMetadata& reference_metadata) const
+{
+	auto it = std::find_if(m_attributes.begin(), m_attributes.end(), [&reference_metadata](const auto& attribute) { return *attribute.second.metadata == reference_metadata; });
+	if (it != m_attributes.end())
+	{
+		return it->second.metadata.get();
+	}
+	return nullptr;
 }
 
 const std::unordered_map<AttributeSemantic, StaticPointCloudAttribute>& StaticPointCloud::attributes() const

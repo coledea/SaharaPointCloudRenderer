@@ -59,36 +59,6 @@ void LodOctree::configureHierarchyPriority(bool use_hierarchy, float factor) noe
 	m_hierarchy_priority_factor = factor;
 }
 
-void LodOctree::setPriorityProjectionFunction(NodePriorityProjectionFunction f)
-{
-	dynamic_cast<NodePriorityComputation*>(m_priority_computation.get())->setPriorityProjectionFunction(f);
-}
-
-void LodOctree::setPriorityDistanceFunction(NodePriorityDistanceFunction f)
-{
-	dynamic_cast<NodePriorityComputation*>(m_priority_computation.get())->setPriorityDistanceFunction(f);
-}
-
-void LodOctree::setPriorityProjectionFactor(float factor)
-{
-	dynamic_cast<NodePriorityComputation*>(m_priority_computation.get())->setPriorityProjectionFactor(factor);
-}
-
-void LodOctree::setPriorityDistanceFactor(float factor)
-{
-	dynamic_cast<NodePriorityComputation*>(m_priority_computation.get())->setPriorityDistanceFactor(factor);
-}
-
-void LodOctree::setPriorityCentralityFactor(float factor)
-{
-	dynamic_cast<NodePriorityComputation*>(m_priority_computation.get())->setPriorityCentralityFactor(factor);
-}
-
-void LodOctree::setPriorityUseRecency(bool use_recency)
-{
-	dynamic_cast<NodePriorityComputation*>(m_priority_computation.get())->setUseRecency(use_recency);
-}
-
 // The priority hierarchy is 1xx for nodes that get rendered, 0xx for nodes that won't get rendered but might be important soon, and 0 for nodes that are not important.
 void LodOctree::updatePrioritiesAndSort(const navigation::Camera& camera)
 {

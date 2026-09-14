@@ -1,5 +1,6 @@
 #include "RenderWindow.h"
 
+#include "rendering/InputEventCache.h"
 #include "utils/Profiler.h"
 
 namespace sahara::ui
@@ -13,6 +14,7 @@ RenderWindow::RenderWindow(QWindow* parent, navigation::NavigationHandler* navig
 	, m_framebuffer(nullptr) // to avoid circular initialization issues, we pass the context in later when startRendering is called
 	, m_use_vsync(true)
 	, m_is_shutting_down(false)
+	, m_paused(false)
 {
 	setSurfaceType(OpenGLSurface);
 }
@@ -80,6 +82,39 @@ int RenderWindow::deviceScaledHeight() const
 	return static_cast<int>(std::ceil(static_cast<qreal>(frameGeometry().height()) * devicePixelRatio()));
 }
 
+std::optional<std::vector<float>> RenderWindow::depthBuffer() const
+{
+	if (m_is_shutting_down || m_context == nullptr || m_framebuffer == nullptr)
+	{
+		return std::nullopt;
+	}
+
+	const int width = deviceScaledWidth();
+	const int height = deviceScaledHeight();
+	if (width <= 0 || height <= 0)
+	{
+		return std::nullopt;
+	}
+
+	if (!m_context->makeCurrent())
+	{
+		return std::nullopt;
+	}
+
+	std::vector<float> depth_buffer(static_cast<size_t>(width) * static_cast<size_t>(height), 1.0f);
+	m_framebuffer->bindAsRead();
+	m_context->gl()->glReadPixels(0, 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT, depth_buffer.data());
+	m_context->gl()->glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+	m_context->doneCurrent();
+
+	return depth_buffer;
+}
+
+void RenderWindow::renderOnce()
+{
+	render();
+}
+
 void RenderWindow::render()
 {
 	if (m_is_shutting_down || m_context == nullptr || m_scene == nullptr || m_framebuffer == nullptr)
@@ -118,34 +153,75 @@ void RenderWindow::render()
 	}
 }
 
-QPoint RenderWindow::scaledMousePosition(const QPoint& pos) const
+QPointF RenderWindow::scaledMousePosition(const QPointF& pos) const
 {
-	auto pos_scaled = static_cast<QPointF>(pos) * devicePixelRatio();
-	return QPoint(static_cast<int>(std::ceil(pos_scaled.x())), static_cast<int>(std::ceil(pos_scaled.y())));
+	return pos * devicePixelRatio();
+}
+
+bool RenderWindow::isPaused() const noexcept
+{
+	return m_paused;
+}
+
+void RenderWindow::togglePause()
+{
+	m_paused = !m_paused;
+
+	if (m_paused)
+	{
+		emit pauseStateChanged(m_paused);
+		s_event_cache.clear();
+	}
+	else
+	{
+		s_event_cache.clear();
+		emit pauseStateChanged(m_paused);
+	}
+
+	if (!m_paused && m_use_vsync)
+	{
+		requestUpdate();
+	}
 }
 
 void RenderWindow::mousePressEvent(QMouseEvent* e)
 {
-	m_navigation_handler->mousePressEvent(scaledMousePosition(e->pos()), e->button());
+	s_event_cache.recordMousePressEvent(scaledMousePosition(e->position()), e->button());
 }
 
 void RenderWindow::mouseReleaseEvent(QMouseEvent* e)
 {
-	m_navigation_handler->mouseReleaseEvent(scaledMousePosition(e->pos()), e->button());
+	s_event_cache.recordMouseReleaseEvent(scaledMousePosition(e->position()), e->button());
 }
 
 void RenderWindow::mouseMoveEvent(QMouseEvent* e)
 {
-	m_navigation_handler->mouseMoveEvent(scaledMousePosition(e->pos()));
+	s_event_cache.recordMouseMoveEvent(scaledMousePosition(e->position()));
+}
+
+void RenderWindow::keyPressEvent(QKeyEvent* e)
+{
+	s_event_cache.recordKeyPressEvent(e);
+}
+
+void RenderWindow::keyReleaseEvent(QKeyEvent* e)
+{
+	if (e->key() == Qt::Key_Space)
+	{
+		togglePause();
+		return;
+	}
+	s_event_cache.recordKeyReleaseEvent(e);
 }
 
 void RenderWindow::wheelEvent(QWheelEvent* e)
 {
-	m_navigation_handler->wheelEvent(*e);
+	s_event_cache.recordWheelEvent(e);
 }
 
 void RenderWindow::resizeEvent(QResizeEvent* e)
 {
+	s_event_cache.recordResizeEvent(QPoint(deviceScaledWidth(), deviceScaledHeight()));
 	if (m_framebuffer)
 	{
 		m_framebuffer->resize(deviceScaledWidth(), deviceScaledHeight());
@@ -157,11 +233,15 @@ bool RenderWindow::event(QEvent* e)
 {
 	if (e->type() == QEvent::UpdateRequest)
 	{
-		if (m_is_shutting_down)
+		if (m_is_shutting_down || m_paused)
 		{
 			return true;
 		}
+
+		m_navigation_handler->update();
 		render();
+		s_event_cache.reset();
+
 		return true;
 	}
 	// We need to release the OpenGL resources before the platform window is destroyed for which we created the OpenGL context.
@@ -200,3 +280,5 @@ void RenderWindow::timerEvent(QTimerEvent* e)
 }
 
 }
+
+InputEventCache sahara::ui::RenderWindow::s_event_cache;

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 namespace sahara::geometry
 {
 
@@ -24,13 +26,23 @@ enum class AttributeSemantic
 	Undefined
 };
 
-inline constexpr bool isCustom(geometry::AttributeSemantic semantic)
+inline constexpr bool attributeIsCustom(geometry::AttributeSemantic semantic)
 {
 	return (semantic != geometry::AttributeSemantic::ID)
 		   && (semantic != geometry::AttributeSemantic::Position)
 		   && (semantic != geometry::AttributeSemantic::Color)
 		   && (semantic != geometry::AttributeSemantic::Normal)
 		   && (semantic != geometry::AttributeSemantic::SegmentID);
+}
+
+inline std::optional<geometry::AttributeSemantic> nextCustomSemantic(geometry::AttributeSemantic current)
+{
+	auto next = static_cast<geometry::AttributeSemantic>(static_cast<int>(current) + 1);
+	if (current >= geometry::AttributeSemantic::Custom10)
+	{
+		return std::nullopt;
+	}
+	return next;
 }
 
 }

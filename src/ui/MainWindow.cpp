@@ -15,11 +15,15 @@ MainWindow::MainWindow(QWidget* parent, RenderWindow* render_window, navigation:
 	: QMainWindow(parent)
 	, m_ui(std::make_unique<Ui::MainWindow>())
 	, m_render_window(render_window)
+	, m_render_window_container(QWidget::createWindowContainer(render_window))
 	, m_camera_path_panel(navigation_handler, camera)
 	, m_camera_settings_panel(navigation_handler, camera)
 	, m_scene_panel(scene)
 	, m_renderer_settings_panel(scene)
 	, m_scene(scene)
+#ifdef ENABLE_USER_STUDY_MODE
+	, m_user_study_controller(nullptr)
+#endif
 
 {
 	m_ui->setupUi(this);
@@ -29,16 +33,20 @@ MainWindow::MainWindow(QWidget* parent, RenderWindow* render_window, navigation:
 	m_ui->DW_RendererSettingsPanel->setWidget(&m_renderer_settings_panel);
 
 	connect(&m_scene_panel, &ScenePanel::activePointCloudChanged, &m_renderer_settings_panel, &RendererSettingsPanel::setActivePointCloud);
-	connect(&m_scene_panel, &ScenePanel::activePointCloudChanged, m_scene, &rendering::Scene::focusOnPointCloud);
+	connect(&m_scene_panel, &ScenePanel::pointCloudFocusRequested, m_scene, &rendering::Scene::focusOnPointCloud);
 
 	// we use an additional widget to avoid the render window overlapping the menu bar and docking widgets
 	setCentralWidget(new QWidget());
-	auto render_window_container = QWidget::createWindowContainer(m_render_window);
 	auto central_layout = new QHBoxLayout(centralWidget());
 	central_layout->setContentsMargins(10, 30, 10, 10);
-	central_layout->addWidget(render_window_container, Qt::AlignCenter);
+	central_layout->addWidget(m_render_window_container, Qt::AlignCenter);
+
 	connect(m_render_window, &RenderWindow::receivedDrop, this, &MainWindow::dropEvent, Qt::ConnectionType::DirectConnection);
 	connect(m_render_window, &RenderWindow::resized, [camera, this]() { camera->setViewport(m_render_window->deviceScaledWidth(), m_render_window->deviceScaledHeight()); });
+
+#ifdef ENABLE_USER_STUDY_MODE
+	m_user_study_controller = std::make_unique<UserStudyController>(centralWidget(), m_render_window, &m_scene_panel, camera, m_scene);
+#endif
 
 	connect(m_ui->DW_CameraPathPanel, &QDockWidget::visibilityChanged, this, [this](bool visible) {
 		const QSignalBlocker blocker(m_ui->actionToggleCameraPathPanel);
@@ -122,7 +130,7 @@ void MainWindow::on_actionExit_triggered()
 
 void MainWindow::on_actionOpenFile_triggered()
 {
-	QString filepath = QFileDialog::getOpenFileName(this, tr("Open File"), "/home", tr("Point Cloud Files (*.ply *.mtpc *.json)"));
+	QString filepath = QFileDialog::getOpenFileName(this, tr("Open File"), "/home", tr("Point Cloud Files (*.ply *.csv *.txt *.ascii *.xyz *.mtpc *.json)"));
 	m_scene->addPointCloud(filepath);
 }
 

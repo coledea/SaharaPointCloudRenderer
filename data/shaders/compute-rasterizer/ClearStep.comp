@@ -1,0 +1,23 @@
+#version 450 core
+
+#extension GL_ARB_gpu_shader_int64 : enable
+
+layout (local_size_x = 1024) in;
+
+layout (std430, binding=0) buffer renderBuffer
+{
+    uint64_t data[];
+};
+
+void main(void)
+{
+    uint invocationID = gl_GlobalInvocationID.x;
+
+    if (invocationID >= data.length())
+        return;
+
+    uint64_t id = uint64_t(0xFFFFFFFF);
+    uint64_t point = uint64_t(floatBitsToInt(1.0)) << 32 | id;
+
+    data[invocationID] = point;
+}

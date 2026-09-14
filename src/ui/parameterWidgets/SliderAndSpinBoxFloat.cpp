@@ -9,11 +9,11 @@ SliderAndSpinBoxFloat::SliderAndSpinBoxFloat(float minimum, float maximum, float
 	: QWidget(parent)
 	, m_spinbox(new QDoubleSpinBox(this))
 {
+	m_spinbox->setDecimals(4);
 	m_spinbox->setMinimum(minimum);
 	m_spinbox->setMaximum(maximum);
 	m_spinbox->setSingleStep(stepsize);
 	m_spinbox->setValue(value);
-	m_spinbox->setDecimals(4);
 
 	m_slider = new HidingSliderToolButton(
 		static_cast<int>(minimum * DECIMAL_PRECISION),

@@ -1,8 +1,10 @@
 #include "Renderer.h"
 
-#include "rendering/colorization/ColorizerFactory.h"
-#include "rendering/postprocessing/PostprocessorFactory.h"
-#include "rendering/rasterization/RasterizerFactory.h"
+#include "pointcloudProviders/MultiTemporalPointCloudProvider.h"
+#include "rasterization/multitemporal/MultiTemporalPointPrimitiveRasterizer.h"
+#include "rendering/colorization/ColorizerSpecifications.h"
+#include "rendering/postprocessing/PostprocessorSpecifications.h"
+#include "rendering/rasterization/RasterizerSpecifications.h"
 
 namespace sahara::rendering
 {
@@ -12,19 +14,30 @@ Renderer::Renderer(AbstractPointCloudProvider* pointcloud_provider, OpenGLContex
 	, m_opengl_context(opengl_context)
 	, m_framebuffer(framebuffer)
 	, m_camera(camera)
-	, m_rasterizer(RasterizerFactory::createRasterizer((pointcloud_provider->type() == PointCloudProviderType::OOCSinglePointCloudProvider || pointcloud_provider->type() == PointCloudProviderType::OOCMultiTemporalPointCloudProvider) ? RasterizerType::OOCPointPrimitiveRasterizer : RasterizerType::PointPrimitiveRasterizer, opengl_context, pointcloud_provider, camera))
-	, m_colorizer(ColorizerFactory::createColorizer(ColorizerType::None, opengl_context, pointcloud_provider, camera))
-	, m_shader_program_factory(opengl_context)
-	, m_shader_program(nullptr)
+	, m_rasterizer(nullptr)
 {
-	reloadShader();
-	connect(m_colorizer.get(), &AbstractColorizer::shaderRequiresRecompile, this, &Renderer::recompileShader);
+	switch (pointcloud_provider->type())
+	{
+		case PointCloudProviderType::OOCMultiTemporalPointCloudProvider:
+		case PointCloudProviderType::OOCSinglePointCloudProvider:
+			changeRasterizer(RasterizerType::OOCPointPrimitiveRasterizer);
+			break;
+		case PointCloudProviderType::MultiTemporalPointCloudProvider:
+			changeRasterizer(RasterizerType::MultiTemporalPointPrimitiveRasterizer);
+			break;
+		default:
+			changeRasterizer(RasterizerType::PointPrimitiveRasterizer);
+			break;
+	}
+
+	connect(&m_postprocessor_pipeline, &PostprocessorPipeline::postprocessorRemoved, this, [this](int index) { emit postprocessorRemoved(index); });
+	connect(&m_postprocessor_pipeline, &PostprocessorPipeline::inputsUpdated, this, &Renderer::postprocessorInputsUpdated);
 }
 
 void Renderer::render()
 {
 	m_pointcloud_provider->update();
-	m_rasterizer->run();
+	m_rasterizer->run(m_framebuffer, m_framebuffer->currentFBOIndex());
 	m_postprocessor_pipeline.run(m_framebuffer, m_framebuffer->currentFBOIndex());
 	// After a point cloud is rendered, the active FBO might need to change, depending on the number of postprocessors in the previous renderer.
 	// We assume that each postprocessor reads the textures from one FBO and writes to the other in alternating ways.
@@ -37,42 +50,52 @@ void Renderer::render()
 
 void Renderer::reloadShader()
 {
-	m_rasterizer->reloadShaderSpecificationsFromDisk();
-	m_colorizer->reloadShaderSpecificationsFromDisk();
-	recompileShader();
+	const auto& postprocessor_required_attributes = m_postprocessor_pipeline.requiredAttributes();
+	m_pointcloud_provider->setRequiredAttributes(m_rasterizer->requiredAttributes(postprocessor_required_attributes)); // this creates the required GPU buffers. We need to call it before informing the rasterizer.
+
+	m_rasterizer->recompileShaders(postprocessor_required_attributes);
 	m_postprocessor_pipeline.reloadShaders();
 }
 
-void Renderer::recompileShader()
+bool Renderer::rasterizerFullfillsRequirements(std::set<geometry::AttributeSpecification> required_attributes)
 {
-	m_shader_program = m_shader_program_factory.createShaderProgram(m_rasterizer.get(), m_colorizer.get(), m_postprocessor_pipeline.shaderSpecifications());
-
-	std::set<geometry::AttributeSpecification> vertex_shader_inputs;
-	for (auto attribute : m_rasterizer->shaderSpecifications().vertex_shader_inputs)
-	{
-		vertex_shader_inputs.insert(attribute);
-	}
-	for (auto attribute : m_colorizer->shaderSpecifications().vertex_shader_outputs)
-	{
-		vertex_shader_inputs.insert(attribute);
-	}
-	for (auto attribute : m_postprocessor_pipeline.shaderSpecifications().required_vertex_attributes)
-	{
-		vertex_shader_inputs.insert(attribute);
-	}
-
-	vertex_shader_inputs.insert({ geometry::AttributeType::Vector3D, geometry::AttributeSemantic::Position }); // Position is always required
-	m_pointcloud_provider->setRequiredAttributes(vertex_shader_inputs);										   // this creates the required GPU buffers. We need to call it before informing the rasterizer.
-	m_rasterizer->setCompiledShaderProgram(m_shader_program.get(), vertex_shader_inputs);
-	m_colorizer->setCompiledShaderProgram(m_shader_program.get());
+	const auto available_attributes = m_rasterizer->availableAttributes();
+	return std::all_of(required_attributes.begin(), required_attributes.end(), [available_attributes](const auto& attribute) {
+		return available_attributes.contains(attribute);
+	});
 }
 
 bool Renderer::isModuleTypeSupported(RendererModule module, int module_type)
 {
+
 	if (module == RendererModule::Rasterizer)
 	{
 		const auto supported_rasterizers = m_pointcloud_provider->supportedRasterizers();
-		return std::find(supported_rasterizers.begin(), supported_rasterizers.end(), static_cast<RasterizerType>(module_type)) != supported_rasterizers.end();
+		const auto rasterizer_type = static_cast<RasterizerType>(module_type);
+		if (!std::any_of(supported_rasterizers.begin(), supported_rasterizers.end(), [rasterizer_type](const auto& attribute) -> bool { return attribute == rasterizer_type; }))
+		{
+			return false;
+		}
+
+		const auto& required_attributes = RasterizerSpecifications::Specifications.at(rasterizer_type).necessaryAttributes();
+		return std::all_of(required_attributes.begin(), required_attributes.end(), [this](const auto& attribute) {
+			return m_pointcloud_provider->hasAttribute(attribute.semantic);
+		});
+	}
+	else if (module == RendererModule::Colorizer)
+	{
+		const auto colorizer_type = static_cast<ColorizerType>(module_type);
+
+		const auto& required_attributes = ColorizerSpecifications::Specifications.at(colorizer_type).necessaryAttributes();
+		return rasterizerFullfillsRequirements(required_attributes);
+	}
+	else if (module == RendererModule::Postprocessor)
+	{
+		const auto processor_type = static_cast<PostprocessorType>(module_type);
+		const auto available_attributes = m_rasterizer->availableAttributes();
+
+		const auto& required_attributes = PostprocessorSpecifications::Specifications.at(processor_type).necessaryAttributes();
+		return rasterizerFullfillsRequirements(required_attributes);
 	}
 
 	return true; // all other modules are supported in any case for now
@@ -94,15 +117,40 @@ void Renderer::changeModule(RendererModule module, int module_type)
 			throw std::runtime_error("Invalid module type");
 			break;
 	}
+
+	emit modulesChanged();
 }
 
 void Renderer::changeRasterizer(RasterizerType rasterizer_type)
 {
 	assert(isModuleTypeSupported(RendererModule::Rasterizer, static_cast<int>(rasterizer_type)));
-	if (m_rasterizer->type() != rasterizer_type)
+
+	if (m_rasterizer == nullptr || m_rasterizer->type() != rasterizer_type)
 	{
-		m_rasterizer = RasterizerFactory::createRasterizer(rasterizer_type, m_opengl_context, m_pointcloud_provider, m_camera);
-		reloadShader();
+		auto was_mtt_rasterizer = m_rasterizer != nullptr && m_rasterizer->type() == RasterizerType::MultiTemporalPointPrimitiveRasterizer;
+
+		m_rasterizer = RasterizerSpecifications::Specifications.at(rasterizer_type).createRasterizer(m_opengl_context, m_pointcloud_provider, m_camera);
+		if (rasterizer_type == RasterizerType::MultiTemporalPointPrimitiveRasterizer)
+		{
+			dynamic_cast<MultiTemporalPointCloudProvider*>(m_pointcloud_provider)->setProvideMultipleTimestamps(true);
+			dynamic_cast<MultiTemporalPointPrimitiveRasterizer*>(m_rasterizer.get())->setFramebuffer(m_framebuffer);
+		}
+		else if (was_mtt_rasterizer)
+		{
+			dynamic_cast<MultiTemporalPointCloudProvider*>(m_pointcloud_provider)->setProvideMultipleTimestamps(false);
+		}
+
+		if (m_pointcloud_provider->hasAttribute(geometry::AttributeSemantic::Color))
+		{
+			changeColorizer(ColorizerType::AttributeBased);
+		}
+		else
+		{
+			changeColorizer(ColorizerType::SingleColor);
+		}
+
+		m_postprocessor_pipeline.removeIncompatiblePostprocessors(m_rasterizer->availableAttributes());
+		connect(m_rasterizer.get(), &AbstractRasterizer::requiredAttributesChanged, this, &Renderer::reloadShader);
 	}
 }
 
@@ -110,39 +158,32 @@ void Renderer::changeColorizer(ColorizerType colorizer_type)
 {
 	assert(isModuleTypeSupported(RendererModule::Colorizer, static_cast<int>(colorizer_type)));
 
-	if (m_colorizer->type() != colorizer_type)
-	{
-		m_colorizer = ColorizerFactory::createColorizer(colorizer_type, m_opengl_context, m_pointcloud_provider, m_camera);
-		reloadShader();
-		connect(m_colorizer.get(), &AbstractColorizer::shaderRequiresRecompile, this, &Renderer::recompileShader);
-	}
+	auto m_colorizer = m_rasterizer->setColorizerType(colorizer_type);
+	connect(m_colorizer, &AbstractColorizer::shaderRequiresRecompile, this, &Renderer::reloadShader);
+	reloadShader();
 }
 
 void Renderer::appendPostprocessor(PostprocessorType postprocessor_type)
 {
 	assert(isModuleTypeSupported(RendererModule::Postprocessor, static_cast<int>(postprocessor_type)));
 
-	m_postprocessor_pipeline.appendPostprocessor(PostprocessorFactory::createPostprocessor(postprocessor_type, m_opengl_context, m_camera));
-	if (m_postprocessor_pipeline.shaderSpecificationsChanged())
-	{
-		m_framebuffer->setRequiredAttachments(m_postprocessor_pipeline.shaderSpecifications().required_framebuffer_attachments);
-		reloadShader();
-	}
+	m_postprocessor_pipeline.appendPostprocessor(PostprocessorSpecifications::Specifications.at(postprocessor_type).createPostprocessor(m_opengl_context, m_camera));
 }
 
 void Renderer::removePostprocessor(uint index)
 {
 	m_postprocessor_pipeline.removePostprocessor(index);
-	if (m_postprocessor_pipeline.shaderSpecificationsChanged())
-	{
-		m_framebuffer->setRequiredAttachments(m_postprocessor_pipeline.shaderSpecifications().required_framebuffer_attachments);
-		reloadShader();
-	}
 }
 
 size_t Renderer::numberOfPostprocessors() const noexcept
 {
 	return m_postprocessor_pipeline.numberOfPostprocessors();
+}
+
+void Renderer::postprocessorInputsUpdated()
+{
+	m_framebuffer->setRequiredAttachments(m_postprocessor_pipeline.requiredFramebufferAttachments());
+	reloadShader();
 }
 
 int Renderer::moduleType(RendererModule module) const
@@ -156,11 +197,16 @@ int Renderer::moduleType(RendererModule module) const
 			return static_cast<int>(m_rasterizer->type());
 			break;
 		case RendererModule::Colorizer:
-			return static_cast<int>(m_colorizer->type());
+			return static_cast<int>(m_rasterizer->m_colorizer->type());
 			break;
 		default:
 			throw std::invalid_argument("Invalid module type");
 	}
+}
+
+std::vector<AbstractRasterizer::AnnotationViewport> Renderer::annotationViewports() const
+{
+	return m_rasterizer->annotationViewports();
 }
 
 std::vector<AbstractParameter*>& Renderer::moduleParameters(RendererModule module) const
@@ -174,7 +220,7 @@ std::vector<AbstractParameter*>& Renderer::moduleParameters(RendererModule modul
 			return m_rasterizer->parameters();
 			break;
 		case RendererModule::Colorizer:
-			return m_colorizer->parameters();
+			return m_rasterizer->m_colorizer->parameters();
 			break;
 		default:
 			throw std::invalid_argument("Invalid module type");

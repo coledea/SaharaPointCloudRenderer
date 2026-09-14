@@ -26,12 +26,14 @@ enum class PointCloudProviderType
 enum class RasterizerType
 {
 	PointPrimitiveRasterizer,
+	PointComputeRasterizer,
+	HQComputeRasterizer,
+	MultiTemporalPointPrimitiveRasterizer,
 	OOCPointPrimitiveRasterizer
 };
 
 enum class ColorizerType
 {
-	None,
 	SingleColor,
 	AttributeBased
 };
@@ -44,8 +46,8 @@ enum class PostprocessorType
 
 const std::unordered_map<RendererModule, std::vector<QString>> RendererModuleNames = {
 	{ RendererModule::PointCloudProvider, { "Static Point Cloud", "Multi-temporal Point Cloud", "Out-of-core Point Cloud", "Multi-temporal Out-of-Core Point Cloud" } },
-	{ RendererModule::Rasterizer, { "Point Primitive Rasterizer", "OOC Point Primitive Rasterizer" } },
-	{ RendererModule::Colorizer, { "None", "Single Color", "Attribute-based" } },
+	{ RendererModule::Rasterizer, { "Point Primitive Rasterizer", "Point Compute", "HQ Point Compute", "Multi-temporal Point Primitive Rasterizer", "OOC Point Primitive Rasterizer" } },
+	{ RendererModule::Colorizer, { "Single Color", "Attribute-based" } },
 	{ RendererModule::Postprocessor, { "EDL", "Hole-filling" } }
 };
 

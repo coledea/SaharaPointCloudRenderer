@@ -13,13 +13,14 @@ public:
 	OOCPointPrimitiveRasterizer(rendering::OpenGLContext* opengl_context, AbstractPointCloudProvider* provider, navigation::Camera* camera) noexcept;
 	~OOCPointPrimitiveRasterizer();
 
-	void reloadShaderSpecificationsFromDisk() override;
-	void run() override;
+	void run(Framebuffer* framebuffer, int read_fbo_index) override;
 
 	RasterizerType type() const noexcept override;
+	static std::set<geometry::AttributeSpecification> necessaryAttributes() noexcept;
 
 private:
-	void initializeVAO() override;
+	ShaderPaths getShaderPaths() const noexcept override;
+	void setVertexAttribute(const geometry::AttributeSpecification& attribute) override;
 };
 
 }

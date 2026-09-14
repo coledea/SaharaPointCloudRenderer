@@ -16,25 +16,6 @@ public:
 	PointCloudProviderType type() const noexcept override;
 
 private:
-	std::unique_ptr<EnumParameter> m_priority_projection_function_parameter;
-	std::unique_ptr<RangeParameter<float>> m_priority_projection_factor_parameter;
-
-	std::unique_ptr<EnumParameter> m_priority_distance_function_parameter;
-	std::unique_ptr<RangeParameter<float>> m_priority_distance_factor_parameter;
-
-	std::unique_ptr<RangeParameter<float>> m_priority_centrality_factor_parameter;
-
-	std::unique_ptr<Parameter<bool>> m_priority_use_parent_child_parameter;
-	std::unique_ptr<RangeParameter<float>> m_priority_parent_child_factor_parameter;
-
-	std::unique_ptr<Parameter<bool>> m_priority_use_recency_parameter;
-
-	void initializePriorityFunctionParameters();
-	void onPriorityProjectionFunctionChanged();
-	void onPriorityDistanceFunctionChanged();
-	void onPriorityProjectionFactorChanged();
-	void onPriorityDistanceFactorChanged();
-	void onPriorityCentralityFactorChanged();
-	void onPriorityUseRecencyChanged();
+	void loadOctree(const std::filesystem::path& filepath);
 };
 }

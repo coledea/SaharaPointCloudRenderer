@@ -44,6 +44,13 @@ bool AbstractPointCloudProvider::hasAttribute(geometry::AttributeSemantic semant
 	return m_available_attributes.find(semantic) != m_available_attributes.end();
 }
 
+bool AbstractPointCloudProvider::hasAttribute(const QString& attribute_name) const
+{
+	return m_available_attributes.end() != std::find_if(m_available_attributes.begin(), m_available_attributes.end(), [&attribute_name](const auto& attribute) {
+			   return attribute.second->name == attribute_name;
+		   });
+}
+
 const std::unordered_map<geometry::AttributeSemantic, geometry::AttributeMetadata*>& AbstractPointCloudProvider::attributesMetadata() const
 {
 	return m_available_attributes;

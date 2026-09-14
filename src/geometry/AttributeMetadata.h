@@ -18,6 +18,8 @@ struct AttributeMetadata
 
 	virtual ~AttributeMetadata() = default;
 	virtual size_t singleEntrySizeInBytes() const noexcept;
+
+	bool operator==(const AttributeMetadata& other) const;
 };
 
 template <typename T>

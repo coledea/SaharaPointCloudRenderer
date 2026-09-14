@@ -22,11 +22,10 @@ void PostprocessorPipelineParametersWidget::addPostprocessorParameters(const QSt
 	setItemIcon(count() - 1, QIcon(":/icons/effect.png"));
 }
 
-void PostprocessorPipelineParametersWidget::removeCurrentPostprocessorParameters()
+void PostprocessorPipelineParametersWidget::removePostprocessorParameters(int index)
 {
-	int current_index = currentIndex();
-	removeItem(current_index);
-	m_parameters.erase(m_parameters.begin() + current_index);
+	removeItem(index);
+	m_parameters.erase(m_parameters.begin() + index);
 }
 
 }

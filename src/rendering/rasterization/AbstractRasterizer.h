@@ -1,44 +1,56 @@
 #pragma once
 
+#include "rendering/Framebuffer.h"
+#include "rendering/colorization/AbstractColorizer.h"
 #include "rendering/pointcloudProviders/AbstractPointCloudProvider.h"
 #include "utils/ShaderUtilities.h"
 
 #include <QOpenGLShaderProgram>
+#include <QRect>
 #include <set>
 
 namespace sahara::rendering
 {
 
-struct RasterizerShaderSpecifications
+class AbstractRasterizer : public QObject
 {
-	QString vertex_shader_path;
-	QString fragment_shader_path;
-	std::set<geometry::AttributeSpecification> vertex_shader_inputs;
-};
+	Q_OBJECT
 
-class AbstractRasterizer
-{
 public:
 	AbstractRasterizer(rendering::OpenGLContext* opengl_context, AbstractPointCloudProvider* provider, navigation::Camera* camera) noexcept;
 	virtual ~AbstractRasterizer() = default;
 
-	virtual void reloadShaderSpecificationsFromDisk() = 0;
-	virtual void setCompiledShaderProgram(QOpenGLShaderProgram* shader_program, const std::set<geometry::AttributeSpecification>& input_attributes) = 0;
-	virtual void run() = 0;
+	virtual void recompileShaders(const std::set<geometry::AttributeSpecification>& required_outputs) = 0;
+	virtual void run(Framebuffer* framebuffer, int read_fbo_index) = 0;
+
+	AbstractColorizer* setColorizerType(ColorizerType colorizer_type);
+	std::vector<AbstractParameter*>& parameters() noexcept;
+
+	std::unique_ptr<AbstractColorizer> m_colorizer;
 
 	virtual RasterizerType type() const noexcept = 0;
-	const RasterizerShaderSpecifications& shaderSpecifications() const noexcept;
 
-	std::vector<AbstractParameter*>& parameters() noexcept;
+	struct AnnotationViewport
+	{
+		QRect viewport;
+		QMatrix4x4 view_projection_matrix;
+	};
+
+	virtual std::vector<AnnotationViewport> annotationViewports() const;
+
+	virtual std::set<geometry::AttributeSpecification> generatableAttributes() noexcept; // Override if the rasterizer can generate attributes (maybe be based on the point cloud providers attributes).
+	virtual std::set<geometry::AttributeSpecification> availableAttributes();
+	virtual std::set<geometry::AttributeSpecification> requiredAttributes(const std::set<geometry::AttributeSpecification>& required_outputs) const;
+
+signals:
+	void requiredAttributesChanged();
 
 protected:
 	OpenGLContext* m_opengl_context;
 	AbstractPointCloudProvider* m_pointcloud_provider;
 	navigation::Camera* m_camera;
 	std::vector<AbstractParameter*> m_parameters;
-	QOpenGLShaderProgram* m_shader_program;
 	std::set<geometry::AttributeSpecification> m_required_input_attributes;
-	RasterizerShaderSpecifications m_shader_specifications;
 };
 
 }

@@ -36,7 +36,7 @@ private:
 	void onPointcloudRemoved(uint id);
 	void onPointcloudAdded(uint id);
 	void recreateParameterWidgets(uint id);
-	void updateModuleChoicesForCurrentPointcloud();
+	void updateModuleChoices();
 };
 
 }

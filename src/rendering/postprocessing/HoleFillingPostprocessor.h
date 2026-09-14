@@ -21,6 +21,8 @@ public:
 	void run(Framebuffer* framebuffer, int read_fbo_index) override;
 	PostprocessorType type() const noexcept override;
 
+	static std::set<geometry::AttributeSpecification> necessaryAttributes();
+
 private:
 	QOpenGLShaderProgram m_shader_program;
 };

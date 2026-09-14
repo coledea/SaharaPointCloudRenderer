@@ -7,7 +7,7 @@ namespace sahara::rendering
 
 const std::unordered_map<FramebufferAttachmentTypes, QOpenGLTexture::TextureFormat> ATTACHMENT_TYPE_TO_TEXTURE_FORMAT{
 	{ FramebufferAttachmentTypes::COLOR, QOpenGLTexture::RGBA8_UNorm },
-	{ FramebufferAttachmentTypes::DEPTH, QOpenGLTexture::D24 },
+	{ FramebufferAttachmentTypes::DEPTH, QOpenGLTexture::D32F },
 	{ FramebufferAttachmentTypes::NORMAL, QOpenGLTexture::RGB8_UNorm },
 	{ FramebufferAttachmentTypes::POSITION, QOpenGLTexture::RGB32F },
 	{ FramebufferAttachmentTypes::ID, QOpenGLTexture::R32U },
@@ -145,6 +145,11 @@ void Framebuffer::bind(int fbo_index)
 void Framebuffer::bind() const
 {
 	m_context->gl()->glBindFramebuffer(GL_FRAMEBUFFER, m_FBOs[m_current_FBO]);
+}
+
+void Framebuffer::bindAsRead() const
+{
+	m_context->gl()->glBindFramebuffer(GL_READ_FRAMEBUFFER, m_FBOs[m_current_FBO]);
 }
 
 void Framebuffer::release() const

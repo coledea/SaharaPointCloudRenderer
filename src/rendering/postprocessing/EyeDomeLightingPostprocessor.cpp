@@ -69,6 +69,11 @@ PostprocessorType EyeDomeLightingPostprocessor::type() const noexcept
 	return PostprocessorType::EyeDomeLighting;
 }
 
+std::set<geometry::AttributeSpecification> EyeDomeLightingPostprocessor::necessaryAttributes()
+{
+	return {};
+}
+
 void EyeDomeLightingPostprocessor::onStrengthChanged()
 {
 	utils::setUniformValue(m_opengl_context, m_shader_program, "u_strength", m_strength_parameter->value());

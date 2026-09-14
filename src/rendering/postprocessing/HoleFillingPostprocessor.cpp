@@ -57,4 +57,9 @@ PostprocessorType HoleFillingPostprocessor::type() const noexcept
 	return PostprocessorType::HoleFilling;
 }
 
+std::set<geometry::AttributeSpecification> HoleFillingPostprocessor::necessaryAttributes()
+{
+	return {};
+}
+
 }

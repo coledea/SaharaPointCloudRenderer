@@ -12,8 +12,8 @@ public:
 	AbstractNavigation(Camera* camera) noexcept;
 	virtual ~AbstractNavigation() = default;
 
-	virtual void onMouseMoveLeftButton(QPoint move, float move_speed, float look_speed) = 0;
-	virtual void onMouseMoveRightButton(QPoint move, float move_speed, float look_speed) = 0;
+	virtual void onMouseMoveLeftButton(QPointF move, float move_speed, float look_speed) = 0;
+	virtual void onMouseMoveRightButton(QPointF move, float move_speed, float look_speed) = 0;
 	virtual void onWheelMove(float delta, float move_speed, float look_speed) = 0;
 
 protected:

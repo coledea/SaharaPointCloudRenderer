@@ -22,10 +22,12 @@ PointPrimitiveRasterizer::~PointPrimitiveRasterizer()
 {
 }
 
-void PointPrimitiveRasterizer::reloadShaderSpecificationsFromDisk()
+ShaderPaths PointPrimitiveRasterizer::getShaderPaths() const noexcept
 {
-	m_shader_specifications.vertex_shader_path = "./data/shaders/PointPrimitiveRasterizer.vert";
-	m_shader_specifications.fragment_shader_path = "./data/shaders/PointPrimitiveRasterizer.frag";
+	ShaderPaths paths;
+	paths[QOpenGLShader::Vertex] = "./data/shaders/PointPrimitiveRasterizer.vert";
+	paths[QOpenGLShader::Fragment] = "./data/shaders/PointPrimitiveRasterizer.frag";
+	return paths;
 }
 
 RasterizerType PointPrimitiveRasterizer::type() const noexcept
@@ -33,10 +35,17 @@ RasterizerType PointPrimitiveRasterizer::type() const noexcept
 	return RasterizerType::PointPrimitiveRasterizer;
 }
 
-void PointPrimitiveRasterizer::setCompiledShaderProgram(QOpenGLShaderProgram* shader_program, const std::set<geometry::AttributeSpecification>& input_attributes)
+void PointPrimitiveRasterizer::recompileShaders(const std::set<geometry::AttributeSpecification>& required_outputs)
 {
+	auto factory = ShaderProgramFactory(m_opengl_context);
+
+	m_colorizer->reloadShaderSpecificationsFromDisk();
+
+	auto inputs = requiredAttributes(required_outputs);
+
+	m_shader_program = factory.createShaderProgram(getShaderPaths(), m_colorizer->finalShaderCode(), inputs, required_outputs);
+
 	m_opengl_context->makeCurrent();
-	m_shader_program = shader_program;
 	m_shader_program->bind();
 
 	glEnable(GL_PROGRAM_POINT_SIZE);
@@ -45,17 +54,19 @@ void PointPrimitiveRasterizer::setCompiledShaderProgram(QOpenGLShaderProgram* sh
 	// set uniform values of new program according to current parameter values
 	m_shader_program->setUniformValue("u_point_size", static_cast<float>(m_point_size_parameter->value()));
 
-	if (!geometry::attributeSpecificationsEqual(input_attributes, m_required_input_attributes))
+	if (!geometry::attributeSpecificationsEqual(inputs, m_required_input_attributes))
 	{
-		m_required_input_attributes = input_attributes;
+		m_required_input_attributes = inputs;
 		initializeVAO();
 	}
 
 	m_shader_program->release();
 	m_opengl_context->doneCurrent();
+
+	m_colorizer->setCompiledShaderProgram(m_shader_program.get());
 }
 
-void PointPrimitiveRasterizer::run()
+void PointPrimitiveRasterizer::run(Framebuffer* framebuffer, int read_fbo_index)
 {
 	auto& draw_command_buffer = m_pointcloud_provider->drawCommandBuffer();
 	if (draw_command_buffer.numberOfCommands() == 0)

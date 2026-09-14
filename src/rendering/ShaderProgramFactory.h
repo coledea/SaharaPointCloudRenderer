@@ -13,28 +13,24 @@
 namespace sahara::rendering
 {
 
+using ShaderPaths = std::map<QOpenGLShader::ShaderTypeBit, QString>;
+
 class ShaderProgramFactory
 {
 public:
 	ShaderProgramFactory(rendering::OpenGLContext* opengl_context) noexcept;
 
-	std::unique_ptr<QOpenGLShaderProgram> createShaderProgram(const AbstractRasterizer* rasterizer, const AbstractColorizer* colorizer, const PostprocessorShaderSpecifications& postprocessor_specifications);
+	std::unique_ptr<QOpenGLShaderProgram> createShaderProgram(const ShaderPaths& shader_paths, const QString& colorization_shader_code, const std::set<geometry::AttributeSpecification> attribute_inputs, const std::set<geometry::AttributeSpecification> attribute_outputs);
 
 private:
 	rendering::OpenGLContext* m_opengl_context;
 
-	std::unique_ptr<QOpenGLShader> m_vertex_shader;
-	QString m_vertex_shader_path;
-
-	std::unique_ptr<QOpenGLShader> m_fragment_shader;
-	QString m_fragment_shader_path;
+	ShaderPaths m_shader_paths;
 	QString m_colorization_shader_code;
 	QString m_shader_defines_string;
 
-	void configure(const AbstractRasterizer* rasterizer, const AbstractColorizer* colorizer, const PostprocessorShaderSpecifications& postprocessor_specifications);
 	std::unique_ptr<QOpenGLShaderProgram> createShaderProgram();
-	bool compileVertexShader();
-	bool compileFragmentShader();
+	void addShader(QOpenGLShaderProgram* program, QOpenGLShader::ShaderTypeBit shaderType, QString shaderPath);
 };
 
 }

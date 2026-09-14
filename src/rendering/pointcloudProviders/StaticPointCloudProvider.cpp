@@ -1,14 +1,15 @@
 #include "StaticPointCloudProvider.h"
 
 #include "geometry/StaticPointCloudFactory.h"
+#include "io/CSVLoadingDialog.h"
 
 namespace sahara::rendering
 {
 
-StaticPointCloudProvider::StaticPointCloudProvider(const std::filesystem::path& filepath, rendering::OpenGLContext* opengl_context) noexcept
+StaticPointCloudProvider::StaticPointCloudProvider(const std::filesystem::path& filepath, const io::CSVColumnSettings& columnSettings, rendering::OpenGLContext* opengl_context) noexcept
 	: AbstractPointCloudProvider(filepath.filename().string().c_str(), opengl_context, 1)
 {
-	m_pointcloud = geometry::StaticPointCloudFactory::loadFromPointCloudFile(filepath);
+	m_pointcloud = geometry::StaticPointCloudFactory::loadFromPointCloudFile(filepath, columnSettings);
 
 	m_opengl_context->makeCurrent();
 	for (const auto& attribute : m_pointcloud->attributes())
@@ -58,7 +59,7 @@ PointCloudProviderType StaticPointCloudProvider::type() const noexcept
 
 std::vector<RasterizerType> StaticPointCloudProvider::supportedRasterizers() const noexcept
 {
-	return { RasterizerType::PointPrimitiveRasterizer };
+	return { RasterizerType::PointPrimitiveRasterizer, RasterizerType::PointComputeRasterizer, RasterizerType::HQComputeRasterizer };
 }
 
 void StaticPointCloudProvider::update()
@@ -70,6 +71,12 @@ void StaticPointCloudProvider::bindGPUBuffer(geometry::AttributeSemantic semanti
 {
 	assert(hasAttribute(semantic));
 	m_gpu_buffers[semantic].bind();
+}
+
+GLuint StaticPointCloudProvider::getGPUBuffer(geometry::AttributeSemantic semantic)
+{
+	assert(hasAttribute(semantic));
+	return m_gpu_buffers[semantic].bufferId();
 }
 
 void StaticPointCloudProvider::releaseGPUBuffer(geometry::AttributeSemantic semantic)

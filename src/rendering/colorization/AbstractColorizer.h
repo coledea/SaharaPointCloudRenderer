@@ -11,12 +11,6 @@
 namespace sahara::rendering
 {
 
-struct ColorizerShaderSpecifications
-{
-	std::vector<geometry::AttributeSpecification> vertex_shader_outputs;
-	QString colorization_shader_code;
-};
-
 class AbstractColorizer : public QObject
 {
 	Q_OBJECT
@@ -30,8 +24,12 @@ public:
 	virtual void setCompiledShaderProgram(QOpenGLShaderProgram* shader_program) = 0;
 
 	virtual ColorizerType type() const noexcept = 0;
-	const ColorizerShaderSpecifications& shaderSpecifications() const noexcept;
+	virtual std::set<geometry::AttributeSpecification> requestedAttributes() const = 0;
+	const QString& finalShaderCode() const noexcept;
 	std::vector<AbstractParameter*>& parameters() noexcept;
+
+	static const std::set<geometry::AttributeSpecification> necessaryAttributes(ColorizerType colorizer_type);
+	std::set<geometry::AttributeSpecification> requiredAttributes() const;
 
 signals:
 	void shaderRequiresRecompile();
@@ -39,7 +37,7 @@ signals:
 protected:
 	OpenGLContext* m_opengl_context;
 	std::vector<AbstractParameter*> m_parameters;
-	ColorizerShaderSpecifications m_shader_specifications;
+	QString m_final_shader_code;
 	QOpenGLShaderProgram* m_shader_program;
 };
 

@@ -11,11 +11,11 @@ AnimatedPathNavigation::AnimatedPathNavigation(Camera* camera)
 	connect(&m_animation, &QAbstractAnimation::stateChanged, this, &AnimatedPathNavigation::onAnimationStateChanged);
 }
 
-void AnimatedPathNavigation::onMouseMoveLeftButton([[maybe_unused]] QPoint move, [[maybe_unused]] float move_speed, [[maybe_unused]] float look_speed)
+void AnimatedPathNavigation::onMouseMoveLeftButton([[maybe_unused]] QPointF move, [[maybe_unused]] float move_speed, [[maybe_unused]] float look_speed)
 {
 }
 
-void AnimatedPathNavigation::onMouseMoveRightButton([[maybe_unused]] QPoint move, [[maybe_unused]] float move_speed, [[maybe_unused]] float look_speed)
+void AnimatedPathNavigation::onMouseMoveRightButton([[maybe_unused]] QPointF move, [[maybe_unused]] float move_speed, [[maybe_unused]] float look_speed)
 {
 }
 

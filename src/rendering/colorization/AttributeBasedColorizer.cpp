@@ -1,5 +1,7 @@
 #include "AttributeBasedColorizer.h"
 
+#include "ColorizerSpecifications.h"
+
 namespace sahara::rendering
 {
 
@@ -8,10 +10,7 @@ inline std::vector<QString> retrieveAvailableAttributes(AbstractPointCloudProvid
 	std::vector<QString> available_attributes{ "depth" };
 	for (const auto attribute : pointcloud_provider->attributesMetadata())
 	{
-		if (attribute.first != geometry::AttributeSemantic::Color)
-		{
-			available_attributes.push_back(attribute.second->name);
-		}
+		available_attributes.push_back(attribute.second->name);
 	}
 	return available_attributes;
 }
@@ -19,6 +18,7 @@ inline std::vector<QString> retrieveAvailableAttributes(AbstractPointCloudProvid
 // These defines are used in shaders to mark whether certain vertex attributes are available.
 inline const std::unordered_map<geometry::AttributeSemantic, QString> SHADER_DEFINE_STRINGS = {
 	{ geometry::AttributeSemantic::ID, "#define USE_ID" },
+	{ geometry::AttributeSemantic::Color, "#define USE_COLOR" },
 	{ geometry::AttributeSemantic::Position, "#define USE_POSITION" },
 	{ geometry::AttributeSemantic::Normal, "#define USE_NORMAL" },
 	{ geometry::AttributeSemantic::SegmentID, "#define USE_SEGMENT" },
@@ -40,7 +40,11 @@ AttributeBasedColorizer::AttributeBasedColorizer(OpenGLContext* opengl_context, 
 	, m_pointcloud_provider(pointcloud_provider)
 	, m_camera(camera)
 {
-	m_attribute_selection_parameter = std::make_unique<EnumParameter>("Attribute", retrieveAvailableAttributes(pointcloud_provider), 0);
+	auto available_attributes = retrieveAvailableAttributes(pointcloud_provider);
+	auto color_iterator = std::find(available_attributes.begin(), available_attributes.end(), "color");
+	int initial_index = (color_iterator == available_attributes.end()) ? 0 : color_iterator - available_attributes.begin();
+
+	m_attribute_selection_parameter = std::make_unique<EnumParameter>("Attribute", available_attributes, initial_index);
 	connect(m_attribute_selection_parameter.get(), &EnumParameter::valueChanged, this, &AttributeBasedColorizer::onAttributeSelectionChanged);
 	m_parameters.push_back(m_attribute_selection_parameter.get());
 
@@ -54,6 +58,8 @@ AttributeBasedColorizer::AttributeBasedColorizer(OpenGLContext* opengl_context, 
 
 	connect(m_camera, &navigation::Camera::farPlaneChanged, this, &AttributeBasedColorizer::onCameraFarPlaneChanged);
 	connect(m_camera, &navigation::Camera::nearPlaneChanged, this, &AttributeBasedColorizer::onCameraNearPlaneChanged);
+
+	reloadShaderSpecificationsFromDisk();
 }
 
 AttributeBasedColorizer::~AttributeBasedColorizer()
@@ -62,8 +68,8 @@ AttributeBasedColorizer::~AttributeBasedColorizer()
 
 void AttributeBasedColorizer::reloadShaderSpecificationsFromDisk()
 {
-	m_shader_code = utils::ShaderStringsFactory::readShaderFile("./data/shaders/AttributeBasedColorizer.glsl");
-	onAttributeSelectionChanged();
+	m_raw_shader_code = utils::ShaderStringsFactory::readShaderFile("./data/shaders/AttributeBasedColorizer.glsl");
+	refreshFinalShaderCode();
 }
 
 void AttributeBasedColorizer::setCompiledShaderProgram(QOpenGLShaderProgram* shader_program)
@@ -91,7 +97,7 @@ void AttributeBasedColorizer::setCompiledShaderProgram(QOpenGLShaderProgram* sha
 	else
 	{
 		const auto attribute_semantic = m_pointcloud_provider->attributeMetadata(attribute_selection)->semantic;
-		if (isCustom(attribute_semantic))
+		if (attributeIsCustom(attribute_semantic))
 		{
 			const auto attribute_type = m_pointcloud_provider->attributeMetadata(attribute_semantic)->type;
 			switch (attribute_type)
@@ -142,31 +148,66 @@ ColorizerType AttributeBasedColorizer::type() const noexcept
 	return ColorizerType::AttributeBased;
 }
 
+std::set<geometry::AttributeSpecification> AttributeBasedColorizer::necessaryAttributes()
+{
+	return {};
+}
+
 void AttributeBasedColorizer::onAttributeSelectionChanged()
 {
-	m_shader_specifications.vertex_shader_outputs = { { geometry::AttributeType::Color, geometry::AttributeSemantic::Color } };
-	m_shader_specifications.colorization_shader_code = m_shader_code;
+	refreshFinalShaderCode();
+
+	emit AbstractColorizer::shaderRequiresRecompile();
+}
+
+void AttributeBasedColorizer::refreshFinalShaderCode()
+{
+	m_final_shader_code = m_raw_shader_code;
+
+	// if color is available, we always use it for mixing it with the color derived from the selected attribute
+	if (m_pointcloud_provider->hasAttribute(geometry::AttributeSemantic::Color))
+	{
+		m_final_shader_code.insert(0, "#define USE_COLOR\n");
+	}
+
 	const auto attribute_selection = m_attribute_selection_parameter->selectedEntry();
 
 	if (attribute_selection == "depth")
 	{
-		m_shader_specifications.colorization_shader_code.insert(0, "#define USE_DEPTH\n");
+		m_final_shader_code.insert(0, "#define USE_DEPTH\n");
 	}
-	else
+	else if (attribute_selection != "color")
 	{
 		const auto attribute_metadata = m_pointcloud_provider->attributeMetadata(attribute_selection);
 		QString shader_define = SHADER_DEFINE_STRINGS.at(attribute_metadata->semantic);
-		if (isCustom(attribute_metadata->semantic))
+		if (attributeIsCustom(attribute_metadata->semantic))
 		{
 			shader_define += utils::ShaderStringsFactory::ATTRIBUTE_TYPE_SUFFIXES.at(attribute_metadata->type);
 		}
 		shader_define += "\n";
 
-		m_shader_specifications.colorization_shader_code.insert(0, shader_define);
-		m_shader_specifications.vertex_shader_outputs.push_back({ attribute_metadata->type, attribute_metadata->semantic });
+		m_final_shader_code.insert(0, shader_define);
+	}
+}
+
+std::set<geometry::AttributeSpecification> AttributeBasedColorizer::requestedAttributes() const
+{
+	auto requested_attributes = ColorizerSpecifications::Specifications.at(type()).necessaryAttributes();
+
+	// if color is available, we always use it for mixing it with the color derived from the selected attribute
+	if (m_pointcloud_provider->hasAttribute(geometry::AttributeSemantic::Color))
+	{
+		requested_attributes.insert({ geometry::AttributeType::Color, geometry::AttributeSemantic::Color });
 	}
 
-	emit AbstractColorizer::shaderRequiresRecompile();
+	const auto attribute_selection = m_attribute_selection_parameter->selectedEntry();
+	if (attribute_selection != "depth" && attribute_selection != "color")
+	{
+		const auto attribute_metadata = m_pointcloud_provider->attributeMetadata(attribute_selection);
+		requested_attributes.insert({ attribute_metadata->type, attribute_metadata->semantic });
+	}
+
+	return requested_attributes;
 }
 
 void AttributeBasedColorizer::onColorScaleChanged()

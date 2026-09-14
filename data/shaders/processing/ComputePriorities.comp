@@ -12,23 +12,11 @@ uniform uint u_level_end;
 uniform mat4x4 u_mvp;
 uniform vec4 u_camera_frustum[6];
 uniform vec3 u_camera_position;
-uniform vec3 u_camera_forward;
-uniform vec3 u_camera_right;
-uniform float u_far_plane;
-uniform float u_camera_fov;
 uniform int u_screen_width;
 uniform int u_screen_height;
 
 // priority/LOD-related uniforms
-uniform int u_projection_function;
 uniform int u_projection_size_render_threshold;
-
-uniform int u_distance_function;
-
-uniform float u_projection_factor;
-uniform float u_distance_factor;
-uniform float u_centrality_factor;
-uniform bool u_use_recency_of_use;
 
 const float PRIORITY_THRESHOLD = 0.001f;
 
@@ -48,11 +36,6 @@ layout(std430, binding=0) restrict buffer nodes_buffer
 layout(std430, binding=1) restrict buffer result_buffer
 {
     float results[];
-};
-
-layout(std430, binding=2) restrict buffer recency_buffer
-{
-    float last_recency[];
 };
 
 /*===============================================*/
@@ -91,10 +74,8 @@ bool in_view_frustum(vec3 bbox_min, vec3 bbox_max)
 }
 
 /*===============================================*/
-/* FUNCTIONS FOR DETERMINING LOD                 */
+/* PROJECTION FUNCTION                           */
 /*===============================================*/
-
-// most accurate method, requires 8 projections (used in VMV 2025 measurements)
 ivec2 full_projection(vec3 bbox_min, vec3 bbox_max) // returns (longest screen-space AABB side's full length, longest screen-space AABB side's visible length)
 {
 	if (!point_outside_box(bbox_min, bbox_max, u_camera_position))
@@ -155,97 +136,6 @@ ivec2 full_projection(vec3 bbox_min, vec3 bbox_max) // returns (longest screen-s
 	return ivec2(longest_side, max(pixel_x, pixel_y));
 }
 
-// approximation using the longest screen-space diagonal: requires only two projections
-ivec2 diagonal_projection(vec3 bbox_min, vec3 bbox_max)
-{
-	if (!point_outside_box(bbox_min, bbox_max, u_camera_position))
-	{
-		return ivec2(u_screen_width, u_screen_width);
-	}
-
-	if(!in_view_frustum(bbox_min, bbox_max))
-	{
-		return ivec2(0);
-	}
-
-	// get the p-vertex and n-vertex for the plane defined by the camera right vector -> these vertices form the longest bbox diagonal in screen-space
-	vec3 mask_positive = vec3(float(u_camera_right.x >= 0.0f), float(u_camera_right.y >= 0.0f), float(u_camera_right.z >= 0.0f));
-	vec3 mask_negative = vec3(1.0f) - mask_positive;
-
-	vec3 p_vertex = bbox_max * mask_positive + bbox_min * mask_negative;
-	vec3 n_vertex = bbox_max * mask_negative + bbox_min * mask_positive;
-
-	vec2 p_projected = project(p_vertex).xy;
-	vec2 n_projected = project(n_vertex).xy;
-
-	// compute longest side of the AABB of the projected AABB (also outside the clip space) -> used for LOD selection
-	int pixel_x = int((p_projected.x - n_projected.x) * float(u_screen_width));
-	int pixel_y = int((p_projected.y - n_projected.y) * float(u_screen_height));
-	int longest_side = max(pixel_x, pixel_y);
-
-	// compute visible longest side -> used for priority computation
-	p_projected = clamp(p_projected, vec2(0.0), vec2(1.0));
-	n_projected = clamp(n_projected, vec2(0.0), vec2(1.0));
-	pixel_x = int((p_projected.x - n_projected.x) * float(u_screen_width));
-	pixel_y = int((p_projected.y - n_projected.y) * float(u_screen_height));
-
-	return ivec2(longest_side, max(pixel_x, pixel_y));
-}
-
-// approximation using bounding sphere: no multiplication with projection matrix required
-ivec2 sphere_projection(vec3 bbox_min, vec3 bbox_max)
-{
-	if (!point_outside_box(bbox_min, bbox_max, u_camera_position))
-	{
-		return ivec2(u_screen_width, u_screen_width);
-	}
-
-	if(!in_view_frustum(bbox_min, bbox_max))
-	{
-		return ivec2(0);
-	}
-
-	vec3 center = bbox_min + (bbox_max - bbox_min) * 0.5f;
-	float radius = length(bbox_max - center);
-	float dist = length(u_camera_position - center);
-	float screen_diameter = 2.0 * radius / (dist * tan(u_camera_fov * 0.5f));
-
-	// compute longest side of the AABB of the projected AABB (also outside the clip space) -> used for LOD selection
-	int pixel_x = int(screen_diameter * float(u_screen_width));
-	int pixel_y = int(screen_diameter * float(u_screen_height));
-	int longest_side = max(pixel_x, pixel_y);
-
-	// compute visible longest side -> used for priority computation
-	screen_diameter = clamp(screen_diameter, 0.0, 1.0);
-	pixel_x = int(screen_diameter * float(u_screen_width));
-	pixel_y = int(screen_diameter * float(u_screen_height));
-
-	return ivec2(longest_side, max(pixel_x, pixel_y));
-}
-
-/*===============================================*/
-/* PRIORITY FUNCTIONS                            */
-/*===============================================*/
-
-float center_distance(vec3 bbox_min, vec3 bbox_max, vec3 camera_position)
-{
-	return max(0.0f, 1.0f - length(camera_position - (bbox_min + (bbox_max - bbox_min) * 0.5f)) / u_far_plane);
-}
-
-float closest_corner_distance(vec3 bbox_min, vec3 bbox_max, vec3 camera_position)
-{
-	vec3 closest_corner_dir = min(abs(bbox_min - camera_position), abs(bbox_max - camera_position));
-	return clamp(1.0f - length(closest_corner_dir) / u_far_plane, 0.0f, 1.0f);
-}
-
-float centrality(vec3 bbox_min, vec3 bbox_max, vec3 camera_position, vec3 camera_forward)
-{
-	vec3 center = bbox_min + (bbox_max - bbox_min) * 0.5f;
-	vec3 camera_to_center = normalize(center - camera_position);
-	return dot(camera_to_center, camera_forward) * 0.5f + 0.5f;
-}
-
-
 /*===============================================*/
 /* MAIN                                          */
 /*===============================================*/
@@ -269,37 +159,10 @@ void main(void)
 	float priority = 0.0f;
 	ivec2 projection;
 
-    // Compute projected size for LOD selection
-	if(u_projection_function == 1)
-	{
-		projection = full_projection(node.bbox_min, node.bbox_max);
-	}
-	else if(u_projection_function == 2)
-	{
-		projection = diagonal_projection(node.bbox_min, node.bbox_max);
-	}
-	else if(u_projection_function == 3)
-	{
-		projection = sphere_projection(node.bbox_min, node.bbox_max);
-	}
-
-	// Compute priority based on the user settings
+	projection = full_projection(node.bbox_min, node.bbox_max);
 
 	// AABB (for leaf and inner nodes that are rendered)
-	float aabb_priority = clamp(float(projection.y) / screen_max, 0.0, 1.0) * u_projection_factor;
-
-	// DISTANCE
-  	if(u_distance_function == 1)
-	{
-		priority += center_distance(node.bbox_min, node.bbox_max, u_camera_position) * u_distance_factor;
-	}
-	else if(u_distance_function == 2)
-	{
-		priority += closest_corner_distance(node.bbox_min, node.bbox_max, u_camera_position) * u_distance_factor;
-	}
-
-	// CENTRALITY
-	priority += centrality(node.bbox_min, node.bbox_max, u_camera_position, u_camera_forward) * u_centrality_factor;
+	float aabb_priority = clamp(float(projection.y) / screen_max, 0.0, 1.0);
 
 	// determine whether to render and compute additional priority factors
 	if(node.is_leaf > 0.0f)
@@ -309,13 +172,6 @@ void main(void)
 		if(parent_rendered == 0 && projection.x > 0)
 		{
 			priority += 100.0f;
-			last_recency[node_index] = 1.0;
-		}
-		else if (u_use_recency_of_use)  // RECENCY
-		{
-			float recency = max(0.0f, last_recency[node_index] - 0.001f);   // decay recency
-			priority += recency; 
-			last_recency[node_index] = recency;
 		}
 
 		if (priority < PRIORITY_THRESHOLD)
@@ -329,17 +185,10 @@ void main(void)
 	{
 		priority += 100.0f + aabb_priority;
 		should_render = 1;
-		last_recency[node_index] = 1.0;
 	}
 	else{
 		float distance_from_threshold = abs(projection.x - u_projection_size_render_threshold);
-		priority += (1.0 - clamp(distance_from_threshold / float(u_projection_size_render_threshold), 0.0, 1.0)) * u_projection_factor; // AABB for inner nodes that are not rendered
-
-		if(u_use_recency_of_use){   // RECENCY
-			float recency = max(0.0f, last_recency[node_index] - 0.001f);   // decay recency
-			priority += recency; 
-			last_recency[node_index] = recency;
-		}
+		priority += (1.0 - clamp(distance_from_threshold / float(u_projection_size_render_threshold), 0.0, 1.0)); // AABB for inner nodes that are not rendered
 	}
 
 	nodes[node_index].parent_index_and_render_flag = parent_index | (should_render << 31);  // write render flag back

@@ -30,6 +30,7 @@ public:
 
 	void freeSegments(const std::vector<bool>& nodes_to_keep);
 	std::optional<uint32_t> transferToGPU(geometry::LodOctreeNode* const node); // transfers attribute data to GPU if necessary and returns the buffer offset
+	GLuint getBuffer(geometry::AttributeSemantic semantic);
 	void bindBuffer(geometry::AttributeSemantic semantic);
 
 	void startNewCycle(); // indicate that the next call to transferToGPU() is part of a new frame (-> resets the buffer update metrics)

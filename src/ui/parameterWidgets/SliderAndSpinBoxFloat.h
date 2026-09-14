@@ -22,7 +22,7 @@ signals:
 	void valueChanged(float value);
 
 private:
-	const float DECIMAL_PRECISION = 1000.0f;
+	const float DECIMAL_PRECISION = 10000.0f;
 	QDoubleSpinBox* m_spinbox;
 	HidingSliderToolButton* m_slider;
 };

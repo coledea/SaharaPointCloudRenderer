@@ -15,7 +15,7 @@ class AbstractLodOctree
 {
 public:
 	AbstractLodOctree(rendering::OpenGLContext* context);
-	virtual ~AbstractLodOctree(){};
+	virtual ~AbstractLodOctree() {};
 
 	virtual const BoundingBox& boundingBox() const = 0;
 	virtual const std::vector<LodOctreeNode*>& nodes() const;

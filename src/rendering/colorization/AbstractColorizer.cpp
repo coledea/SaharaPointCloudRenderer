@@ -1,5 +1,8 @@
 #include "AbstractColorizer.h"
 
+#include "AttributeBasedColorizer.h"
+#include "SingleColorColorizer.h"
+
 namespace sahara::rendering
 {
 
@@ -9,9 +12,9 @@ AbstractColorizer::AbstractColorizer(OpenGLContext* opengl_context) noexcept
 {
 }
 
-const ColorizerShaderSpecifications& AbstractColorizer::shaderSpecifications() const noexcept
+const QString& AbstractColorizer::finalShaderCode() const noexcept
 {
-	return m_shader_specifications;
+	return m_final_shader_code;
 }
 
 std::vector<AbstractParameter*>& AbstractColorizer::parameters() noexcept

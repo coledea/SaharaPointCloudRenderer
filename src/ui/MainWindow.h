@@ -7,6 +7,10 @@
 #include "rendererSettingsPanel/RendererSettingsPanel.h"
 #include "scenePanel/ScenePanel.h"
 
+#ifdef ENABLE_USER_STUDY_MODE
+#	include "userStudyOverlay/UserStudyController.h"
+#endif
+
 #include <QCloseEvent>
 #include <QMainWindow>
 
@@ -56,6 +60,10 @@ private:
 	RendererSettingsPanel m_renderer_settings_panel;
 
 	rendering::Scene* m_scene;
+	QWidget* m_render_window_container;
+#ifdef ENABLE_USER_STUDY_MODE
+	std::unique_ptr<UserStudyController> m_user_study_controller;
+#endif
 };
 
 }
