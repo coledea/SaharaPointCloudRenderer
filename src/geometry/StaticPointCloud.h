@@ -29,8 +29,14 @@ public:
 	size_t numberOfPoints() const;
 	const BoundingBox& boundingBox() const noexcept;
 
+	// attributes can either be queried by their semantic, or by a reference metadata object (which is useful for custom attributes with no fixed semantic)
 	bool hasAttribute(AttributeSemantic semantic) const;
+	bool hasAttribute(const AttributeMetadata& metadata) const;
+	const AttributeMetadata* attributeMetadata(AttributeSemantic semantic) const;
+	const AttributeMetadata* attributeMetadata(const AttributeMetadata& reference_metadata) const;
 	const AbstractAttributeData* attributeData(AttributeSemantic semantic) const;
+	const AbstractAttributeData* attributeData(const AttributeMetadata& reference_metadata) const;
+
 	const std::unordered_map<AttributeSemantic, StaticPointCloudAttribute>& attributes() const;
 
 	// Note: overrides any previous data for an attribute with the same semantic

@@ -1,0 +1,61 @@
+#version 450 core
+
+#extension GL_ARB_gpu_shader_int64 : enable
+#extension GL_NV_shader_atomic_int64 : enable
+
+layout (local_size_x = 1024) in;
+
+#SHADER_DEFINES // Here the VERTEX_SHADER_OUTPUT_XYZ get placed by the ShaderProgramFactory before compilation of the shader
+
+uniform ivec2 u_FramebufferSize;
+uniform mat4 u_ModelViewProjectionMatrix;
+
+layout (std430, binding=0) buffer renderBuffer
+{
+    uint64_t data[];
+};
+
+struct vector3
+{
+    float x;
+    float y;
+    float z;
+};
+
+layout (std430, binding=1) readonly buffer inputPosition
+{
+    vector3 sourcePosition[];
+};
+
+void main(void)
+{
+    uint invocationID = gl_GlobalInvocationID.x;
+
+    if (invocationID >= sourcePosition.length())
+        return;
+
+    vec4 position = vec4(sourcePosition[invocationID].x, sourcePosition[invocationID].y, sourcePosition[invocationID].z, 1.0);
+    position = u_ModelViewProjectionMatrix * position;
+
+    if(abs(position.x) > position.w || abs(position.y) > position.w || abs(position.z) > position.w) {
+        return;
+    }
+
+    position.xyz /= position.w;
+
+    uint64_t id = uint64_t(invocationID);
+    uint64_t depth = floatBitsToInt((position.z + 1.0) / 2.0);
+    uint64_t point = (depth << 32) | id;
+
+    ivec2 pixelCoords = ivec2((position.xy * 0.5 + 0.5) * vec2(u_FramebufferSize - ivec2(1)));
+    int pixelID = pixelCoords.x + pixelCoords.y * u_FramebufferSize.x;
+
+    uint64_t current_point = data[pixelID];
+    if(point < current_point) {
+        #ifdef GL_NV_shader_atomic_int64
+            atomicMin(data[pixelID], point);
+        #else
+            data[pixelID] = point;
+        #endif
+    }
+}

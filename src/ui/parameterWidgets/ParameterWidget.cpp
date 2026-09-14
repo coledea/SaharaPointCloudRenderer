@@ -33,9 +33,11 @@ ParameterWidget::ParameterWidget(const rendering::AbstractParameter& parameter, 
 	m_layout.addWidget(icon);
 	m_layout.addWidget(tool_button_resetWidget);
 	setLayout(&m_layout);
+	setVisible(parameter.isVisible());
 
 	connect(tool_button_reset, &QToolButton::clicked, &parameter, &rendering::AbstractParameter::reset);
 	connect(&parameter, &rendering::AbstractParameter::valueChanged, this, &ParameterWidget::onParameterValueChanged);
+	connect(&parameter, &rendering::AbstractParameter::visibilityChanged, this, &ParameterWidget::setVisible);
 }
 
 }

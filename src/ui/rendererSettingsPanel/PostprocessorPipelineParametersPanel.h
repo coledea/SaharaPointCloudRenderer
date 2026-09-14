@@ -34,8 +34,10 @@ private:
 private slots:
 	void onPointcloudRemoved(uint id);
 	void onPointcloudAdded(const rendering::AbstractPointCloudProvider& pointcloud_provider);
+	void updateModuleChoices(uint id);
 	void onAddButtonClicked(int postprocessor_index);
 	void onRemoveButtonClicked();
+	void onPostprocessorRemoved(int index);
 };
 
 }

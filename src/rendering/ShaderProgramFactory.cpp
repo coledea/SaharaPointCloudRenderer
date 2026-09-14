@@ -7,49 +7,27 @@ namespace sahara::rendering
 
 ShaderProgramFactory::ShaderProgramFactory(rendering::OpenGLContext* opengl_context) noexcept
 	: m_opengl_context(opengl_context)
-	, m_vertex_shader(nullptr)
-	, m_fragment_shader(nullptr)
 {
 	m_opengl_context->makeCurrent();
-	m_vertex_shader = std::make_unique<QOpenGLShader>(QOpenGLShader::Vertex);
-	m_fragment_shader = std::make_unique<QOpenGLShader>(QOpenGLShader::Fragment);
 	m_opengl_context->doneCurrent();
 }
 
-std::unique_ptr<QOpenGLShaderProgram> ShaderProgramFactory::createShaderProgram(const AbstractRasterizer* rasterizer, const AbstractColorizer* colorizer, const PostprocessorShaderSpecifications& postprocessor_specifications)
+std::unique_ptr<QOpenGLShaderProgram> ShaderProgramFactory::createShaderProgram(const ShaderPaths& shader_paths, const QString& colorization_shader_code, const std::set<geometry::AttributeSpecification> attribute_inputs, const std::set<geometry::AttributeSpecification> attribute_outputs)
 {
-	configure(rasterizer, colorizer, postprocessor_specifications);
-	return createShaderProgram();
-}
+	m_shader_paths = shader_paths;
+	m_colorization_shader_code = colorization_shader_code;
 
-void ShaderProgramFactory::configure(const AbstractRasterizer* rasterizer, const AbstractColorizer* colorizer, const PostprocessorShaderSpecifications& postprocessor_specifications)
-{
 	m_shader_defines_string.clear();
-
-	m_vertex_shader_path = rasterizer->shaderSpecifications().vertex_shader_path;
-	m_fragment_shader_path = rasterizer->shaderSpecifications().fragment_shader_path;
-	m_colorization_shader_code = colorizer->shaderSpecifications().colorization_shader_code;
-
-	// find set of required vertex shader inputs and outputs
-	std::set<geometry::AttributeSpecification> vertex_shader_outputs;
-	for (const auto attribute : colorizer->shaderSpecifications().vertex_shader_outputs)
+	for (const auto attribute : attribute_inputs)
 	{
-		vertex_shader_outputs.insert(attribute);
+		m_shader_defines_string += utils::ShaderStringsFactory::attributeInputDefineString(attribute.semantic, attribute.type);
 	}
-	for (const auto attribute : postprocessor_specifications.required_vertex_attributes)
+	for (const auto attribute : attribute_outputs)
 	{
-		vertex_shader_outputs.insert(attribute);
+		m_shader_defines_string += utils::ShaderStringsFactory::attributeOutputDefineString(attribute.semantic, attribute.type);
 	}
 
-	// add corresponding defines in the shader code
-	for (const auto attribute : vertex_shader_outputs)
-	{
-		m_shader_defines_string += utils::ShaderStringsFactory::vertexShaderOutputDefineString(attribute.semantic, attribute.type);
-	}
-	for (const auto attribute : postprocessor_specifications.required_vertex_attributes)
-	{
-		m_shader_defines_string += utils::ShaderStringsFactory::vertexShaderOutputDefineString(attribute.semantic, attribute.type);
-	}
+	return createShaderProgram();
 }
 
 std::unique_ptr<QOpenGLShaderProgram> ShaderProgramFactory::createShaderProgram()
@@ -58,21 +36,14 @@ std::unique_ptr<QOpenGLShaderProgram> ShaderProgramFactory::createShaderProgram(
 
 	auto shader_program = std::make_unique<QOpenGLShaderProgram>();
 
-	if (!compileVertexShader())
+	for (const auto& [shaderType, shaderPath] : m_shader_paths)
 	{
-		qDebug() << "Vertex shader compilation error:" << m_vertex_shader->log();
+		addShader(shader_program.get(), shaderType, shaderPath);
 	}
-	shader_program->addShader(m_vertex_shader.get());
-
-	if (!compileFragmentShader())
-	{
-		qDebug() << "Fragment shader compilation error:" << m_fragment_shader->log();
-	}
-	shader_program->addShader(m_fragment_shader.get());
 
 	if (!shader_program->link())
 	{
-		qDebug() << "Program linking error!";
+		qDebug() << "Program linking error: " << shader_program->log();
 	}
 
 	m_opengl_context->doneCurrent();
@@ -80,25 +51,30 @@ std::unique_ptr<QOpenGLShaderProgram> ShaderProgramFactory::createShaderProgram(
 	return shader_program;
 }
 
-bool ShaderProgramFactory::compileVertexShader()
+void insertIfAvailable(QString& shader_code, const QString& insert_string, const QString& to_insert)
 {
-	QString vertex_shader_code = utils::ShaderStringsFactory::readShaderFile(m_vertex_shader_path);
-
-	// Insert vertex shader outputs/output writes
-	vertex_shader_code.insert(vertex_shader_code.indexOf("#SHADER_DEFINES"), m_shader_defines_string);
-	vertex_shader_code.remove("#SHADER_DEFINES");
-	return m_vertex_shader->compileSourceCode(vertex_shader_code);
+	auto index = shader_code.indexOf(insert_string);
+	if (index >= 0)
+	{
+		shader_code.insert(index, to_insert);
+		shader_code.remove(insert_string);
+	}
 }
 
-bool ShaderProgramFactory::compileFragmentShader()
+void ShaderProgramFactory::addShader(QOpenGLShaderProgram* program, QOpenGLShader::ShaderTypeBit shaderType, QString shaderPath)
 {
-	QString fragment_shader_code = utils::ShaderStringsFactory::readShaderFile(m_fragment_shader_path);
+	QString shaderCode = utils::ShaderStringsFactory::readShaderFile(shaderPath);
 
-	// Insert fragment shader inputs
-	fragment_shader_code.insert(fragment_shader_code.indexOf("#SHADER_DEFINES"), m_shader_defines_string);
-	fragment_shader_code.insert(fragment_shader_code.indexOf("#COLORIZATION"), m_colorization_shader_code);
-	fragment_shader_code.remove("#SHADER_DEFINES");
-	fragment_shader_code.remove("#COLORIZATION");
-	return m_fragment_shader->compileSourceCode(fragment_shader_code);
+	const QString definesString = "#SHADER_DEFINES";
+	insertIfAvailable(shaderCode, definesString, m_shader_defines_string);
+
+	const QString colorizationString = "#COLORIZATION";
+	insertIfAvailable(shaderCode, colorizationString, m_colorization_shader_code);
+
+	if (!program->addShaderFromSourceCode(shaderType, shaderCode))
+	{
+		qDebug() << "Shader compilation error:" << program->log();
+	}
 }
+
 }

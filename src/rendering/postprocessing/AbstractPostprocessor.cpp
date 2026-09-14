@@ -1,5 +1,7 @@
 #include "AbstractPostprocessor.h"
 
+#include "PostprocessorSpecifications.h"
+
 namespace sahara::rendering
 {
 
@@ -8,14 +10,14 @@ AbstractPostprocessor::AbstractPostprocessor(rendering::OpenGLContext* opengl_co
 {
 }
 
-const PostprocessorShaderSpecifications& AbstractPostprocessor::shaderSpecifications() const noexcept
-{
-	return m_shader_specifications;
-}
-
 std::vector<AbstractParameter*>& AbstractPostprocessor::parameters() noexcept
 {
 	return m_parameters;
+}
+
+const std::set<geometry::AttributeSpecification> AbstractPostprocessor::requiredAttributes() const
+{
+	return PostprocessorSpecifications::Specifications.at(type()).necessaryAttributes();
 }
 
 }

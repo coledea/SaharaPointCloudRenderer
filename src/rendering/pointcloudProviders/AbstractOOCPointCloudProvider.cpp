@@ -84,6 +84,17 @@ void AbstractOOCPointCloudProvider::initializeParameters()
 
 void AbstractOOCPointCloudProvider::setRequiredAttributes(const std::set<geometry::AttributeSpecification>& attributes)
 {
+	std::set<geometry::AttributeSpecification> previous_attributes;
+	for (const auto& attribute : m_required_attributes)
+	{
+		previous_attributes.emplace(attribute->type, attribute->semantic);
+	}
+
+	if (geometry::attributeSpecificationsEqual(attributes, previous_attributes))
+	{
+		return;
+	}
+
 	AbstractPointCloudProvider::setRequiredAttributes(attributes);
 	m_chunk_loader->setRequiredAttributes(m_required_attributes);
 	m_gpu_buffer_manager.setRequiredAttributes(m_required_attributes);
@@ -117,6 +128,11 @@ GLuint AbstractOOCPointCloudProvider::positionOffsetsBuffer() const noexcept
 void AbstractOOCPointCloudProvider::bindGPUBuffer(geometry::AttributeSemantic semantic)
 {
 	m_gpu_buffer_manager.bindBuffer(semantic);
+}
+
+GLuint AbstractOOCPointCloudProvider::getGPUBuffer(geometry::AttributeSemantic semantic)
+{
+	return m_gpu_buffer_manager.getBuffer(semantic);
 }
 
 void AbstractOOCPointCloudProvider::releaseGPUBuffer(geometry::AttributeSemantic semantic)

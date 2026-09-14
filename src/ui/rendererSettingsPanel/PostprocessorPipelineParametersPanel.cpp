@@ -17,12 +17,6 @@ PostprocessorPipelineParametersPanel::PostprocessorPipelineParametersPanel(rende
 	m_ui->setupUi(this);
 
 	m_ui->TB_Add->setDisabled(true);
-	for (int i = 0; i < rendering::RendererModuleNames.at(rendering::RendererModule::Postprocessor).size(); i++)
-	{
-		auto new_action = new QAction(rendering::RendererModuleNames.at(rendering::RendererModule::Postprocessor).at(i));
-		connect(new_action, &QAction::triggered, [this, i](bool /*checked*/) { onAddButtonClicked(i); });
-		m_add_postprocessor_menu.addAction(new_action);
-	}
 	m_ui->TB_Add->setMenu(&m_add_postprocessor_menu);
 
 	m_ui->TB_Remove->setDisabled(true);
@@ -30,6 +24,7 @@ PostprocessorPipelineParametersPanel::PostprocessorPipelineParametersPanel(rende
 
 	connect(scene, &rendering::Scene::pointCloudAdded, this, &PostprocessorPipelineParametersPanel::onPointcloudAdded);
 	connect(scene, &rendering::Scene::pointCloudRemoved, this, &PostprocessorPipelineParametersPanel::onPointcloudRemoved);
+	connect(scene, &rendering::Scene::rendererModulesChanged, this, &PostprocessorPipelineParametersPanel::updateModuleChoices);
 }
 
 PostprocessorPipelineParametersPanel::~PostprocessorPipelineParametersPanel()
@@ -46,7 +41,9 @@ void PostprocessorPipelineParametersPanel::setActivePointCloud(uint id)
 		m_active_pointcloud_id = id;
 		m_ui->pipelineScrollArea->setWidget(m_parameters[m_active_pointcloud_id].get());
 		m_ui->TB_Add->setEnabled(true);
+		updateModuleChoices(id);
 		m_ui->TB_Remove->setDisabled(m_scene->renderer(m_active_pointcloud_id).numberOfPostprocessors() == 0);
+		connect(&m_scene->renderer(m_active_pointcloud_id), &rendering::Renderer::postprocessorRemoved, this, &PostprocessorPipelineParametersPanel::onPostprocessorRemoved);
 	}
 }
 
@@ -58,6 +55,18 @@ void PostprocessorPipelineParametersPanel::onPointcloudRemoved(uint id)
 	}
 	m_parameters.erase(id);
 	m_ui->TB_Add->setDisabled(true);
+}
+
+void PostprocessorPipelineParametersPanel::updateModuleChoices(uint id)
+{
+	m_add_postprocessor_menu.clear();
+	for (int i = 0; i < rendering::RendererModuleNames.at(rendering::RendererModule::Postprocessor).size(); i++)
+	{
+		auto new_action = new QAction(rendering::RendererModuleNames.at(rendering::RendererModule::Postprocessor).at(i));
+		connect(new_action, &QAction::triggered, [this, i](bool /*checked*/) { onAddButtonClicked(i); });
+		new_action->setDisabled(!m_scene->renderer(m_active_pointcloud_id).isModuleTypeSupported(rendering::RendererModule::Postprocessor, i));
+		m_add_postprocessor_menu.addAction(new_action);
+	}
 }
 
 void PostprocessorPipelineParametersPanel::onPointcloudAdded(const rendering::AbstractPointCloudProvider& pointcloud_provider)
@@ -80,7 +89,11 @@ void PostprocessorPipelineParametersPanel::onAddButtonClicked(int postprocessor_
 void PostprocessorPipelineParametersPanel::onRemoveButtonClicked()
 {
 	m_scene->renderer(m_active_pointcloud_id).removePostprocessor(m_parameters[m_active_pointcloud_id]->currentIndex());
-	m_parameters[m_active_pointcloud_id]->removeCurrentPostprocessorParameters();
+}
+
+void PostprocessorPipelineParametersPanel::onPostprocessorRemoved(int index)
+{
+	m_parameters[m_active_pointcloud_id]->removePostprocessorParameters(index);
 	m_ui->TB_Remove->setDisabled(m_scene->renderer(m_active_pointcloud_id).numberOfPostprocessors() == 0);
 }
 

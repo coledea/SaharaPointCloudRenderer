@@ -21,9 +21,14 @@ public:
 	const geometry::BoundingBox& boundingBox() const override;
 	PointCloudProviderType type() const noexcept override;
 	std::vector<RasterizerType> supportedRasterizers() const noexcept override;
+	void setProvideMultipleTimestamps(bool provide_multiple_timestamps);
+	void decreaseTimestamp();
+	void increaseTimestamp();
 
 	void update() override;
+
 	void bindGPUBuffer(geometry::AttributeSemantic semantic) override;
+	GLuint getGPUBuffer(geometry::AttributeSemantic semantic) override;
 	void releaseGPUBuffer(geometry::AttributeSemantic semantic) override;
 
 private:
@@ -32,10 +37,13 @@ private:
 	int m_number_of_points;
 	geometry::BoundingBox m_bounding_box;
 	std::unordered_map<geometry::AttributeSemantic, QOpenGLBuffer> m_gpu_buffers;
+	std::vector<std::unique_ptr<geometry::AttributeMetadata>> m_combined_attribute_metadata;
 
+	bool m_provide_multiple_timestamps;
 	std::unique_ptr<RangeParameter<int>> m_epoch_parameter;
 
 	void loadEpochsConcurrently(const std::filesystem::path& filepath);
+	void createCombinedAttributeMetadata();
 	void createGPUBuffers();
 	void updateCommandBuffer();
 };

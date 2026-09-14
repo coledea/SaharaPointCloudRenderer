@@ -36,6 +36,7 @@ public:
 	GLuint positionOffsetsBuffer() const noexcept;
 
 	void bindGPUBuffer(geometry::AttributeSemantic semantic) override;
+	GLuint getGPUBuffer(geometry::AttributeSemantic semantic) override;
 	void releaseGPUBuffer(geometry::AttributeSemantic semantic) override;
 
 	void setRenderFence(GLsync fence); // this is used to synchronize the rendering with the GPU buffer updates -> wait for rendering to finish before starting buffer updates
@@ -73,7 +74,7 @@ protected:
 	int m_cpu_buffer_hits;
 	int m_cpu_buffer_misses;
 
-	void initializeParameters();
+	void initializeParameters(); // this has to be called after m_octree is initialized
 	void onCPUCacheSizeChanged();
 	void onGPUCacheSizeChanged();
 	void onBufferUpdateLimitChanged();

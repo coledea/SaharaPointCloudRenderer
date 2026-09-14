@@ -4,18 +4,6 @@
 namespace sahara::geometry
 {
 
-inline AttributeMetadata::AttributeMetadata(const QString& name, AttributeSemantic semantic, AttributeType type)
-	: name(name)
-	, semantic(semantic)
-	, type(type)
-{
-}
-
-inline size_t AttributeMetadata::singleEntrySizeInBytes() const noexcept
-{
-	return 0;
-}
-
 template <typename T>
 inline TypedAttributeMetadata<T>::TypedAttributeMetadata(const QString& name, AttributeSemantic semantic, const AttributeDataVector<T>& data)
 	: AttributeMetadata(name, semantic, TypeToAttributeTypeEnum<T>::type)

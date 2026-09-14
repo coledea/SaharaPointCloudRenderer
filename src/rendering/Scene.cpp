@@ -39,7 +39,7 @@ void Scene::render()
 void Scene::addPointCloud(const QString& filepath)
 {
 	const auto path = std::filesystem::path(filepath.toStdString());
-	auto pointcloud = PointCloudProviderFactory::createPointCloudProvider(path, m_opengl_context, m_camera, m_navigation_handler);
+	auto pointcloud = PointCloudProviderFactory::createPointCloudProvider(path, m_opengl_context, m_camera);
 
 	if (pointcloud == nullptr)
 	{
@@ -50,6 +50,7 @@ void Scene::addPointCloud(const QString& filepath)
 	const uint id = pointcloud->id();
 	m_pointclouds[id] = std::move(pointcloud);
 	m_renderers.emplace(id, std::make_unique<Renderer>(m_pointclouds[id].get(), m_opengl_context, m_framebuffer, m_camera));
+	connect(m_renderers[id].get(), &Renderer::modulesChanged, this, [this, id]() { emit rendererModulesChanged(id); });
 	m_visibility_flags[id] = true;
 
 	focusOnPointCloud(id);

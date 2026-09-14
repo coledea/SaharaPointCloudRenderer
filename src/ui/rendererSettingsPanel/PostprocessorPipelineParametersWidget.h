@@ -13,7 +13,7 @@ public:
 	PostprocessorPipelineParametersWidget(QWidget* parent = nullptr);
 
 	void addPostprocessorParameters(const QString& postprocessor_name, const std::vector<rendering::AbstractParameter*>& parameters);
-	void removeCurrentPostprocessorParameters();
+	void removePostprocessorParameters(int index);
 
 private:
 	std::vector<std::unique_ptr<MultipleParametersWidget>> m_parameters;

@@ -11,4 +11,6 @@ export ENABLE_PROFILING=OFF
 # If set to ON, point data is streamed in out-of-core rendering directly from external storage. This can be used to avoid caching effects during profiling, where later measurements perform better due to OS file caching.
 export BYPASS_OS_FILE_CACHE=OFF
 
+# If libstdc++'s TBB backend conflicts with Qt, activate this flag to prevent TBB being used. However, this will disable parallel algorithm execution.
+export DEACTIVATE_TBB=OFF
 

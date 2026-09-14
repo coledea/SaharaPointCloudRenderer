@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 4.0)
 
 project(Sahara VERSION 1.0.0 LANGUAGES CXX)
 
@@ -15,7 +15,7 @@ endif()
 
 add_compile_definitions(_USE_MATH_DEFINES)
 
-if (NOT MSVC)
+if (NOT MSVC AND DEACTIVATE_TBB)
 	add_compile_definitions(_GLIBCXX_USE_TBB_PAR_BACKEND=0)
 endif ()
 
@@ -45,7 +45,8 @@ set(GEOMETRY_SOURCES
 	${SOURCE_DIR}/geometry/AttributeData.inl
 	${SOURCE_DIR}/geometry/AttributeMetadata.h
 	${SOURCE_DIR}/geometry/AttributeMetadata.inl
-	${SOURCE_DIR}/geometry/AttributeMetadata.h
+	${SOURCE_DIR}/geometry/AttributeMetadata.cpp
+	${SOURCE_DIR}/geometry/AttributeSemantics.h
 	${SOURCE_DIR}/geometry/AbstractNodePriorityComputation.cpp
 	${SOURCE_DIR}/geometry/AbstractNodePriorityComputation.h
 	${SOURCE_DIR}/geometry/AttributeSpecification.cpp
@@ -96,6 +97,8 @@ set(NAVIGATION_SOURCES
 set(GENERAL_RENDERING_SOURCES
 	${SOURCE_DIR}/rendering/Framebuffer.h
 	${SOURCE_DIR}/rendering/Framebuffer.cpp
+	${SOURCE_DIR}/rendering/InputEventCache.h
+	${SOURCE_DIR}/rendering/InputEventCache.cpp
 	${SOURCE_DIR}/rendering/OpenGLContext.h
 	${SOURCE_DIR}/rendering/OpenGLContext.cpp
 	${SOURCE_DIR}/rendering/Renderer.h
@@ -150,14 +153,28 @@ set(POINTCLOUD_PROVIDERS_SOURCES
 )
 
 set(RASTERIZATION_SOURCES
+	${SOURCE_DIR}/rendering/rasterization/AbstractComputeRasterizer.h
+	${SOURCE_DIR}/rendering/rasterization/AbstractComputeRasterizer.cpp
 	${SOURCE_DIR}/rendering/rasterization/AbstractRasterizer.h
 	${SOURCE_DIR}/rendering/rasterization/AbstractRasterizer.cpp
+	${SOURCE_DIR}/rendering/rasterization/HQComputeRasterizer.h
+	${SOURCE_DIR}/rendering/rasterization/HQComputeRasterizer.cpp
+	${SOURCE_DIR}/rendering/rasterization/multitemporal/ChangeHighlightingRasterizerPass.h
+	${SOURCE_DIR}/rendering/rasterization/multitemporal/ChangeHighlightingRasterizerPass.cpp
+	${SOURCE_DIR}/rendering/rasterization/multitemporal/MultiTemporalPointPrimitiveRasterizer.h
+	${SOURCE_DIR}/rendering/rasterization/multitemporal/MultiTemporalPointPrimitiveRasterizer.cpp
+	${SOURCE_DIR}/rendering/rasterization/multitemporal/SideBySideRasterizerPass.h
+	${SOURCE_DIR}/rendering/rasterization/multitemporal/SideBySideRasterizerPass.cpp
+	${SOURCE_DIR}/rendering/rasterization/multitemporal/SplitViewRasterizerPass.h
+	${SOURCE_DIR}/rendering/rasterization/multitemporal/SplitViewRasterizerPass.cpp
 	${SOURCE_DIR}/rendering/rasterization/OOCPointPrimitiveRasterizer.h
 	${SOURCE_DIR}/rendering/rasterization/OOCPointPrimitiveRasterizer.cpp
+	${SOURCE_DIR}/rendering/rasterization/PointComputeRasterizer.h
+	${SOURCE_DIR}/rendering/rasterization/PointComputeRasterizer.cpp
 	${SOURCE_DIR}/rendering/rasterization/PointPrimitiveRasterizer.h
 	${SOURCE_DIR}/rendering/rasterization/PointPrimitiveRasterizer.cpp
-	${SOURCE_DIR}/rendering/rasterization/RasterizerFactory.h
-	${SOURCE_DIR}/rendering/rasterization/RasterizerFactory.cpp
+	${SOURCE_DIR}/rendering/rasterization/RasterizerSpecifications.h
+	${SOURCE_DIR}/rendering/rasterization/RasterizerSpecifications.cpp
 )
 
 set(COLORIZATION_SOURCES
@@ -165,10 +182,8 @@ set(COLORIZATION_SOURCES
 	${SOURCE_DIR}/rendering/colorization/AbstractColorizer.cpp
 	${SOURCE_DIR}/rendering/colorization/AttributeBasedColorizer.h
 	${SOURCE_DIR}/rendering/colorization/AttributeBasedColorizer.cpp
-	${SOURCE_DIR}/rendering/colorization/ColorizerFactory.h
-	${SOURCE_DIR}/rendering/colorization/ColorizerFactory.cpp
-	${SOURCE_DIR}/rendering/colorization/DefaultColorizer.h
-	${SOURCE_DIR}/rendering/colorization/DefaultColorizer.cpp
+	${SOURCE_DIR}/rendering/colorization/ColorizerSpecifications.h
+	${SOURCE_DIR}/rendering/colorization/ColorizerSpecifications.cpp
 	${SOURCE_DIR}/rendering/colorization/SingleColorColorizer.h
 	${SOURCE_DIR}/rendering/colorization/SingleColorColorizer.cpp
 )
@@ -180,10 +195,10 @@ set(POSTPROCESSING_SOURCES
 	${SOURCE_DIR}/rendering/postprocessing/EyeDomeLightingPostprocessor.cpp
 	${SOURCE_DIR}/rendering/postprocessing/HoleFillingPostprocessor.h
 	${SOURCE_DIR}/rendering/postprocessing/HoleFillingPostprocessor.cpp
-	${SOURCE_DIR}/rendering/postprocessing/PostprocessorFactory.h
-	${SOURCE_DIR}/rendering/postprocessing/PostprocessorFactory.cpp
 	${SOURCE_DIR}/rendering/postprocessing/PostprocessorPipeline.h
 	${SOURCE_DIR}/rendering/postprocessing/PostprocessorPipeline.cpp
+	${SOURCE_DIR}/rendering/postprocessing/PostprocessorSpecifications.h
+	${SOURCE_DIR}/rendering/postprocessing/PostprocessorSpecifications.cpp
 )
 
 set(UTILS_SOURCES
@@ -191,12 +206,12 @@ set(UTILS_SOURCES
 	${SOURCE_DIR}/utils/CachedValue.inl
 	${SOURCE_DIR}/utils/EasingCurveIcons.h
 	${SOURCE_DIR}/utils/EasingCurveIcons.cpp
+	${SOURCE_DIR}/utils/FullscreenGeometry.h
+	${SOURCE_DIR}/utils/FullscreenGeometry.cpp
 	${SOURCE_DIR}/utils/LimitedQueue.h
 	${SOURCE_DIR}/utils/LimitedQueue.inl
 	${SOURCE_DIR}/utils/MemoryStream.h
 	${SOURCE_DIR}/utils/MemoryStream.cpp
-	${SOURCE_DIR}/utils/MultiTemporalBenchmarkController.h
-	${SOURCE_DIR}/utils/MultiTemporalBenchmarkController.cpp
 	${SOURCE_DIR}/utils/NoInitializationAllocator.h
 	${SOURCE_DIR}/utils/NoInitializationAllocator.inl
 	${SOURCE_DIR}/utils/NumericLimits.h
@@ -297,6 +312,18 @@ set(CORE_SOURCES
 set(IO_SOURCES
 	${SOURCE_DIR}/io/CameraPathIO.h
 	${SOURCE_DIR}/io/CameraPathIO.cpp
+	${SOURCE_DIR}/io/CSVAttributeParser.h
+	${SOURCE_DIR}/io/CSVAttributeParser.cpp
+	${SOURCE_DIR}/io/CSVColumn.h
+	${SOURCE_DIR}/io/CSVColumn.cpp
+	${SOURCE_DIR}/io/CSVColumnSettings.h
+	${SOURCE_DIR}/io/CSVColumnSettings.cpp
+	${SOURCE_DIR}/io/CSVColumnTypeDetection.h
+	${SOURCE_DIR}/io/CSVColumnTypeDetection.cpp
+	${SOURCE_DIR}/io/CSVLoader.h
+	${SOURCE_DIR}/io/CSVLoader.cpp
+	${SOURCE_DIR}/io/CSVLoadingDialog.h
+	${SOURCE_DIR}/io/CSVLoadingDialog.cpp
 	${SOURCE_DIR}/io/MemoryMappedFile.h
 	${SOURCE_DIR}/io/MemoryMappedFile.inl
 	${SOURCE_DIR}/io/MemoryMappedFile.cpp
@@ -307,6 +334,8 @@ set(IO_SOURCES
 	${SOURCE_DIR}/io/PLYLoader.h
 	${SOURCE_DIR}/io/PLYLoader.inl
 	${SOURCE_DIR}/io/PLYLoader.cpp
+	${SOURCE_DIR}/io/TypedCSVAttributeParser.h
+	${SOURCE_DIR}/io/TypedCSVAttributeParser.inl
 	${SOURCE_DIR}/io/UnbufferedFile.h
 	${SOURCE_DIR}/io/UnbufferedFile.inl
 	${SOURCE_DIR}/io/UnbufferedFile.cpp

@@ -4,6 +4,7 @@
 #include "Camera.h"
 #include "FirstPersonNavigation.h"
 #include "OrbitalNavigation.h"
+#include "rendering/InputEventCache.h"
 
 #include <QWheelEvent>
 
@@ -17,10 +18,7 @@ class NavigationHandler : public QObject
 public:
 	NavigationHandler(Camera* camera);
 
-	void mousePressEvent(QPoint pos, Qt::MouseButton button);
-	void mouseReleaseEvent(QPoint pos, Qt::MouseButton button);
-	void mouseMoveEvent(QPoint pos);
-	void wheelEvent(const QWheelEvent& e);
+	void update();
 
 	bool isAnimatedPathNavigationActive();
 
@@ -44,6 +42,8 @@ public slots:
 	void onAnimatedPathNavigationStopped();
 
 private:
+	InputEventCache& m_event_cache;
+
 	FirstPersonNavigation m_first_person_navigation;
 	OrbitalNavigation m_orbital_navigation;
 	AnimatedPathNavigation m_animated_path_navigation;
@@ -51,9 +51,6 @@ private:
 	AbstractNavigation* m_current_navigation;
 	AbstractNavigation* m_next_navigation;
 
-	bool m_left_mouse_button_pressed;
-	bool m_right_mouse_button_pressed;
-	QPoint m_last_mouse_position;
 	float m_move_speed;
 	float m_look_speed;
 };

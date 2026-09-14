@@ -18,10 +18,21 @@ OOCPointPrimitiveRasterizer::~OOCPointPrimitiveRasterizer()
 {
 }
 
-void OOCPointPrimitiveRasterizer::reloadShaderSpecificationsFromDisk()
+ShaderPaths OOCPointPrimitiveRasterizer::getShaderPaths() const noexcept
 {
-	m_shader_specifications.vertex_shader_path = "./data/shaders/OOCPointPrimitiveRasterizer.vert";
-	m_shader_specifications.fragment_shader_path = "./data/shaders/PointPrimitiveRasterizer.frag";
+	ShaderPaths paths;
+	paths[QOpenGLShader::Vertex] = "./data/shaders/OOCPointPrimitiveRasterizer.vert";
+	paths[QOpenGLShader::Fragment] = "./data/shaders/PointPrimitiveRasterizer.frag";
+	return paths;
+}
+
+void OOCPointPrimitiveRasterizer::setVertexAttribute(const geometry::AttributeSpecification& attribute)
+{
+	if (attribute.semantic == geometry::AttributeSemantic::Position)
+	{
+		return; // We manage the position attribute separately, as points and voxels store positions differently.
+	}
+	PointPrimitiveRasterizer::setVertexAttribute(attribute);
 }
 
 RasterizerType OOCPointPrimitiveRasterizer::type() const noexcept
@@ -29,7 +40,7 @@ RasterizerType OOCPointPrimitiveRasterizer::type() const noexcept
 	return RasterizerType::OOCPointPrimitiveRasterizer;
 }
 
-void OOCPointPrimitiveRasterizer::run()
+void OOCPointPrimitiveRasterizer::run(Framebuffer* framebuffer, int read_fbo_index)
 {
 	auto& draw_command_buffer = m_pointcloud_provider->drawCommandBuffer();
 	if (draw_command_buffer.numberOfCommands() == 0)
@@ -69,17 +80,6 @@ void OOCPointPrimitiveRasterizer::run()
 #endif
 
 	provider->setRenderFence(m_opengl_context->gl()->glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0));
-}
-
-void OOCPointPrimitiveRasterizer::initializeVAO()
-{
-	// remove position attribute. We manage it separately, as points and voxels store positions differently.
-	auto position_it = m_required_input_attributes.find(geometry::AttributeSpecification{ geometry::AttributeType::Vector3D, geometry::AttributeSemantic::Position });
-	if (position_it != m_required_input_attributes.end())
-	{
-		m_required_input_attributes.erase(position_it);
-	}
-	PointPrimitiveRasterizer::initializeVAO();
 }
 
 }

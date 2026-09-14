@@ -9,10 +9,20 @@
 namespace sahara::rendering
 {
 
-OOCMultiTemporalPointCloudProvider::OOCMultiTemporalPointCloudProvider(const std::filesystem::path& filepath, rendering::OpenGLContext* opengl_context, navigation::Camera* camera, navigation::NavigationHandler* navigation_handler)
-	: AbstractOOCPointCloudProvider(filepath.filename().string().c_str(), opengl_context, camera)
-	, m_navigation_handler(navigation_handler)
+OOCMultiTemporalPointCloudProvider::OOCMultiTemporalPointCloudProvider(const std::filesystem::path& filepath, rendering::OpenGLContext* opengl_context, navigation::Camera* camera)
+	: AbstractOOCPointCloudProvider(filepath.string(), opengl_context, camera)
 	, m_number_of_timestamps(0)
+{
+	loadOctree(filepath);
+	initializeParameters();
+	initializeMultiTemporalParameters();
+}
+
+OOCMultiTemporalPointCloudProvider::~OOCMultiTemporalPointCloudProvider()
+{
+}
+
+void OOCMultiTemporalPointCloudProvider::loadOctree(const std::filesystem::path& filepath)
 {
 	// ############## READ IN META DATA ####################
 	QFile file(filepath);
@@ -44,15 +54,6 @@ OOCMultiTemporalPointCloudProvider::OOCMultiTemporalPointCloudProvider(const std
 	m_draw_command_buffer.setCapacity(overall_num_nodes);
 	m_nodes_should_remain_on_cpu.resize(overall_num_nodes);
 	m_nodes_should_remain_on_gpu.resize(overall_num_nodes);
-
-	initializeParameters();
-	initializeMultiTemporalParameters();
-
-	m_benchmark_controller = std::make_unique<utils::MultiTemporalBenchmarkController>(this); // requires access to the parameters, so we initialize it at the end
-}
-
-OOCMultiTemporalPointCloudProvider::~OOCMultiTemporalPointCloudProvider()
-{
 }
 
 void OOCMultiTemporalPointCloudProvider::extractTimestampMetadataFromJSON(const QJsonDocument& metadata, std::vector<int>& num_nodes, std::vector<geometry::BoundingBox>& bounding_boxes)
@@ -122,26 +123,11 @@ void OOCMultiTemporalPointCloudProvider::initializeMultiTemporalParameters()
 	m_animate_timestamps_parameter = std::make_unique<Parameter<bool>>("Animate Timestamps", false);
 	connect(m_animate_timestamps_parameter.get(), &Parameter<bool>::valueChanged, this, &OOCMultiTemporalPointCloudProvider::onAnimateTimestampsParameterChanged);
 	m_parameters.push_back(m_animate_timestamps_parameter.get());
-	onAnimateTimestampsParameterChanged();
 
 	m_timestamp_duration_parameter = std::make_unique<RangeParameter<float>>("Timestamp Duration", 1.0f, 0.001f, 10.0f, 0.01f);
 	connect(m_timestamp_duration_parameter.get(), &RangeParameter<float>::valueChanged, this, &OOCMultiTemporalPointCloudProvider::onTimestampDurationParameterChanged);
 	m_parameters.push_back(m_timestamp_duration_parameter.get());
-
-	m_benchmark_mode_parameter = std::make_unique<EnumParameter>("Benchmarking Mode", std::initializer_list<QString>{ "Timestamp Switches", "Camera Animation" }, 0);
-	connect(m_benchmark_mode_parameter.get(), &EnumParameter::valueChanged, this, &OOCMultiTemporalPointCloudProvider::onBenchmarkModeParameterChanged);
-	m_parameters.push_back(m_benchmark_mode_parameter.get());
-
-	m_benchmark_num_samples_parameter = std::make_unique<RangeParameter<int>>("Benchmark Num Samples", 600, 1, 10000, 1);
-	m_parameters.push_back(m_benchmark_num_samples_parameter.get());
-
-	m_benchmark_camera_path_parameter = std::make_unique<FilePathParameter>("Benchmark Camera Positions", "", "*.camerapath.json");
-	connect(m_benchmark_camera_path_parameter.get(), &FilePathParameter::valueChanged, this, &OOCMultiTemporalPointCloudProvider::onBenchmarkCameraPathChanged);
-	m_parameters.push_back(m_benchmark_camera_path_parameter.get());
-
-	m_trigger_benchmark_parameter = std::make_unique<TriggerParameter>("Start Benchmark");
-	connect(m_trigger_benchmark_parameter.get(), &TriggerParameter::valueChanged, this, &OOCMultiTemporalPointCloudProvider::onTriggerBenchmarkParameterChanged);
-	m_parameters.push_back(m_trigger_benchmark_parameter.get());
+	onAnimateTimestampsParameterChanged();
 }
 
 PointCloudProviderType OOCMultiTemporalPointCloudProvider::type() const noexcept
@@ -170,11 +156,12 @@ void OOCMultiTemporalPointCloudProvider::onAnimateTimestampsParameterChanged()
 {
 	if (m_animate_timestamps_parameter->value() == true)
 	{
-		m_benchmark_controller->stopBenchmark(); // stop any ongoing benchmark, as it also animates timestamps and we don't want to have two concurrent animations interfering with each other
+		m_timestamp_duration_parameter->setVisible(true);
 		m_timestamp_animation_timer.start(m_timestamp_duration_parameter->value() * 1000.0f, this);
 	}
 	else
 	{
+		m_timestamp_duration_parameter->setVisible(false);
 		m_timestamp_animation_timer.stop();
 	}
 }
@@ -185,29 +172,6 @@ void OOCMultiTemporalPointCloudProvider::onTimestampDurationParameterChanged()
 	{
 		m_timestamp_animation_timer.start(m_timestamp_duration_parameter->value() * 1000.0f, this);
 	}
-}
-
-void OOCMultiTemporalPointCloudProvider::onTriggerBenchmarkParameterChanged()
-{
-	if (m_trigger_benchmark_parameter->isActive())
-	{
-		m_animate_timestamps_parameter->setValue(false); // stop any ongoing timestamp animation
-		m_benchmark_controller->startBenchmark();
-	}
-	else
-	{
-		m_benchmark_controller->stopBenchmark();
-	}
-}
-
-void OOCMultiTemporalPointCloudProvider::onBenchmarkCameraPathChanged()
-{
-	m_benchmark_controller->setCameraPositionsPath(m_benchmark_camera_path_parameter->value());
-}
-
-void OOCMultiTemporalPointCloudProvider::onBenchmarkModeParameterChanged()
-{
-	m_benchmark_controller->setBenchmarkMode(static_cast<utils::MultiTemporalBenchmarkController::BenchmarkMode>(m_benchmark_mode_parameter->value()));
 }
 
 void OOCMultiTemporalPointCloudProvider::timerEvent(QTimerEvent* e)

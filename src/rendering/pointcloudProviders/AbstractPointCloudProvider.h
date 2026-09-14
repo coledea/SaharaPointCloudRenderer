@@ -34,6 +34,7 @@ public:
 	virtual std::vector<RasterizerType> supportedRasterizers() const noexcept = 0;
 
 	bool hasAttribute(geometry::AttributeSemantic semantic) const;
+	bool hasAttribute(const QString& attribute_name) const;
 	const std::unordered_map<geometry::AttributeSemantic, geometry::AttributeMetadata*>& attributesMetadata() const;
 	const geometry::AttributeMetadata* attributeMetadata(const QString& attribute_name) const;
 	const geometry::AttributeMetadata* attributeMetadata(geometry::AttributeSemantic semantic) const;
@@ -44,6 +45,7 @@ public:
 	const geometry::TypedAttributeMetadata<T>* typedAttributeMetadata(geometry::AttributeSemantic semantic);
 
 	virtual void bindGPUBuffer(geometry::AttributeSemantic semantic) = 0;
+	virtual GLuint getGPUBuffer(geometry::AttributeSemantic semantic) = 0;
 	virtual void releaseGPUBuffer(geometry::AttributeSemantic semantic) = 0;
 
 signals:

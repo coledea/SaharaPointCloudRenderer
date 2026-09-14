@@ -29,7 +29,7 @@ MainWindow::MainWindow(QWidget* parent, RenderWindow* render_window, navigation:
 	m_ui->DW_RendererSettingsPanel->setWidget(&m_renderer_settings_panel);
 
 	connect(&m_scene_panel, &ScenePanel::activePointCloudChanged, &m_renderer_settings_panel, &RendererSettingsPanel::setActivePointCloud);
-	connect(&m_scene_panel, &ScenePanel::activePointCloudChanged, m_scene, &rendering::Scene::focusOnPointCloud);
+	connect(&m_scene_panel, &ScenePanel::pointCloudFocusRequested, m_scene, &rendering::Scene::focusOnPointCloud);
 
 	// we use an additional widget to avoid the render window overlapping the menu bar and docking widgets
 	setCentralWidget(new QWidget());
@@ -122,7 +122,7 @@ void MainWindow::on_actionExit_triggered()
 
 void MainWindow::on_actionOpenFile_triggered()
 {
-	QString filepath = QFileDialog::getOpenFileName(this, tr("Open File"), "/home", tr("Point Cloud Files (*.ply *.mtpc *.json)"));
+	QString filepath = QFileDialog::getOpenFileName(this, tr("Open File"), "/home", tr("Point Cloud Files (*.ply *.csv *.txt *.ascii *.xyz *.mtpc *.json)"));
 	m_scene->addPointCloud(filepath);
 }
 

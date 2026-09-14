@@ -22,6 +22,7 @@ public:
 	void setCompiledShaderProgram(QOpenGLShaderProgram* shader_program) override;
 
 	virtual ColorizerType type() const noexcept override;
+	std::set<geometry::AttributeSpecification> requestedAttributes() const override;
 
 private:
 	std::unique_ptr<EnumParameter> m_attribute_selection_parameter;
@@ -30,9 +31,12 @@ private:
 	AbstractPointCloudProvider* m_pointcloud_provider;
 	navigation::Camera* m_camera;
 
-	QString m_shader_code;
+	QString m_raw_shader_code;
 
 	void onAttributeSelectionChanged();
+	void updateColorScaleParameterVisibility();
+	bool selectedAttributeSupportsQualitativeColorScale() const;
+	void refreshFinalShaderCode();
 	void onColorScaleChanged();
 	void onOriginalColorFactorChanged();
 	void onCameraFarPlaneChanged(float far_plane);

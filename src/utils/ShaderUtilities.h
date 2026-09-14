@@ -12,17 +12,19 @@ namespace sahara::utils
 class ShaderStringsFactory
 {
 public:
-	static QString vertexShaderOutputDefineString(geometry::AttributeSemantic semantic, geometry::AttributeType type);
-	static QString fragmentShaderOutputDefineString(geometry::AttributeSemantic semantic, geometry::AttributeType type);
+	static QString attributeInputDefineString(geometry::AttributeSemantic semantic, geometry::AttributeType type);
+	static QString attributeOutputDefineString(geometry::AttributeSemantic semantic, geometry::AttributeType type);
 	static std::string vertexShaderInputName(geometry::AttributeSemantic attribute);
 
 	static QString readShaderFile(const QString& file_path);
 
 	static const std::unordered_map<geometry::AttributeType, QString> ATTRIBUTE_TYPE_SUFFIXES;
 
+	static void compileVertexFragmentShader(QOpenGLShaderProgram* shader_program, const QString& vertex_shader_path, const QString& fragment_shader_path);
+
 private:
-	static const std::unordered_map<geometry::AttributeSemantic, QString> VERTEX_SHADER_OUTPUT_DEFINE_STRINGS;
-	static const std::unordered_map<geometry::AttributeSemantic, QString> FRAGMENT_SHADER_OUTPUT_DEFINE_STRINGS;
+	static const std::unordered_map<geometry::AttributeSemantic, QString> ATTRIBUTE_INPUT_DEFINE_STRINGS;
+	static const std::unordered_map<geometry::AttributeSemantic, QString> ATTRIBUTE_OUTPUT_DEFINE_STRINGS;
 };
 
 inline const std::unordered_map<geometry::AttributeType, GLenum> ATTRIBUTE_GL_TYPES = {

@@ -1,5 +1,6 @@
 #include "StaticPointCloudFactory.h"
 
+#include "io/CSVLoader.h"
 #include "io/PLYLoader.h"
 
 #include <cmath>
@@ -7,13 +8,18 @@
 namespace sahara::geometry::StaticPointCloudFactory
 {
 
-std::unique_ptr<StaticPointCloud> loadFromPointCloudFile(const std::filesystem::path& filepath)
+std::unique_ptr<StaticPointCloud> loadFromPointCloudFile(const std::filesystem::path& filepath, const io::CSVColumnSettings& columnSettings)
 {
 	const auto extension = filepath.extension();
 	if (extension == ".ply")
 	{
 		io::PLYLoader ply_loader;
 		return ply_loader.load(filepath.string());
+	}
+	else if (extension == ".csv" || extension == ".txt" || extension == ".ascii" || extension == ".xyz")
+	{
+		io::CSVLoader csv_loader;
+		return csv_loader.load(filepath.string(), columnSettings);
 	}
 	return std::make_unique<geometry::StaticPointCloud>();
 }

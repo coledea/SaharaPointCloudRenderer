@@ -24,11 +24,10 @@ ParametersPanel::ParametersPanel(rendering::RendererModule renderer_module, rend
 		m_ui->CB_approachSelection->insertItem(i, rendering::RendererModuleNames.at(m_renderer_module).at(i));
 	}
 
-	connect(m_ui->CB_approachSelection, &QComboBox::currentIndexChanged, m_scene, [this](int index) { 
-		m_scene->renderer(m_active_pointcloud_id).changeModule(m_renderer_module, index); 
-		recreateParameterWidgets(m_active_pointcloud_id); });
+	connect(m_ui->CB_approachSelection, &QComboBox::currentIndexChanged, m_scene, [this](int index) { m_scene->renderer(m_active_pointcloud_id).changeModule(m_renderer_module, index); });
 	connect(scene, &rendering::Scene::pointCloudAdded, this, [&](const rendering::AbstractPointCloudProvider& pointcloud_provider) { onPointcloudAdded(pointcloud_provider.id()); });
 	connect(scene, &rendering::Scene::pointCloudRemoved, this, &ParametersPanel::onPointcloudRemoved);
+	connect(scene, &rendering::Scene::rendererModulesChanged, this, [&](uint id) { updateModuleChoices(); m_ui->CB_approachSelection->setCurrentIndex(m_scene->renderer(id).moduleType(m_renderer_module)); recreateParameterWidgets(id); });
 }
 
 ParametersPanel::~ParametersPanel()
@@ -51,7 +50,7 @@ void ParametersPanel::setActivePointCloud(uint id)
 	{
 		m_ui->parametersScrollArea->setWidget(m_parameters[id].get());
 		m_active_pointcloud_id = id;
-		updateModuleChoicesForCurrentPointcloud();
+		updateModuleChoices();
 	}
 }
 
@@ -87,7 +86,7 @@ void ParametersPanel::recreateParameterWidgets(uint id)
 	}
 }
 
-void ParametersPanel::updateModuleChoicesForCurrentPointcloud()
+void ParametersPanel::updateModuleChoices()
 {
 	QStandardItemModel* model = qobject_cast<QStandardItemModel*>(m_ui->CB_approachSelection->model());
 	for (int i = 0; i < rendering::RendererModuleNames.at(m_renderer_module).size(); i++)

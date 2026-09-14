@@ -26,35 +26,21 @@ NodePriorityComputation::NodePriorityComputation(rendering::OpenGLContext* conte
 	m_opengl_context->gl()->glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_bbox_buffer);
 	m_opengl_context->gl()->glBufferData(GL_SHADER_STORAGE_BUFFER, node_data.size() * sizeof(NodeGPUData), node_data.data(), GL_STATIC_DRAW);
 
-	m_opengl_context->gl()->glGenBuffers(1, &m_recency_buffer);
-	m_opengl_context->gl()->glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_recency_buffer);
-	std::vector<float> recency_initial_data(node_data.size(), 0.0f);
-	m_opengl_context->gl()->glBufferData(GL_SHADER_STORAGE_BUFFER, node_data.size() * sizeof(float), recency_initial_data.data(), GL_STATIC_DRAW);
-
 	m_opengl_context->doneCurrent();
 }
 
 NodePriorityComputation::~NodePriorityComputation()
 {
-	m_opengl_context->makeCurrent();
-	if (m_recency_buffer != 0)
-	{
-		m_opengl_context->gl()->glDeleteBuffers(1, &m_recency_buffer);
-	}
-	m_opengl_context->doneCurrent();
 }
 
 void NodePriorityComputation::computePriorities(const navigation::Camera& camera)
 {
+	// Also adapt the shader code
 	m_shader_program.bind();
 
 	auto mvp = camera.viewProjectionMatrix();
 	m_shader_program.setUniformValue("u_mvp", mvp);
 	m_shader_program.setUniformValue("u_camera_position", camera.cameraSpecifications().eye);
-	m_shader_program.setUniformValue("u_camera_forward", camera.forward());
-	m_shader_program.setUniformValue("u_camera_right", camera.right());
-	m_shader_program.setUniformValue("u_far_plane", camera.cameraSpecifications().far_plane);
-	m_shader_program.setUniformValue("u_camera_fov", qDegreesToRadians(camera.cameraSpecifications().fov));
 	m_shader_program.setUniformValue("u_screen_width", camera.viewportWidth());
 	m_shader_program.setUniformValue("u_screen_height", camera.viewportHeight());
 
@@ -70,7 +56,6 @@ void NodePriorityComputation::computePriorities(const navigation::Camera& camera
 
 	m_opengl_context->gl()->glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, m_bbox_buffer);
 	m_opengl_context->gl()->glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, m_result_buffer.handle());
-	m_opengl_context->gl()->glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, m_recency_buffer);
 
 	for (const auto& level : m_level_bounds)
 	{
@@ -83,36 +68,6 @@ void NodePriorityComputation::computePriorities(const navigation::Camera& camera
 	m_shader_program.release();
 
 	m_result_buffer.waitForGPUWrite();
-}
-
-void NodePriorityComputation::setPriorityProjectionFunction(NodePriorityProjectionFunction f)
-{
-	utils::setUniformValue(m_opengl_context, m_shader_program, "u_projection_function", static_cast<int>(f));
-}
-
-void NodePriorityComputation::setPriorityDistanceFunction(NodePriorityDistanceFunction f)
-{
-	utils::setUniformValue(m_opengl_context, m_shader_program, "u_distance_function", static_cast<int>(f));
-}
-
-void NodePriorityComputation::setPriorityProjectionFactor(float factor)
-{
-	utils::setUniformValue(m_opengl_context, m_shader_program, "u_projection_factor", factor);
-}
-
-void NodePriorityComputation::setPriorityDistanceFactor(float factor)
-{
-	utils::setUniformValue(m_opengl_context, m_shader_program, "u_distance_factor", factor);
-}
-
-void NodePriorityComputation::setPriorityCentralityFactor(float factor)
-{
-	utils::setUniformValue(m_opengl_context, m_shader_program, "u_centrality_factor", factor);
-}
-
-void NodePriorityComputation::setUseRecency(bool use_recency)
-{
-	utils::setUniformValue(m_opengl_context, m_shader_program, "u_use_recency_of_use", use_recency);
 }
 
 }

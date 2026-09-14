@@ -82,6 +82,11 @@ size_t GPUBufferManager::availableBufferStorage() const
 	});
 }
 
+GLuint GPUBufferManager::getBuffer(geometry::AttributeSemantic semantic)
+{
+	return m_buffers.at(semantic).handle();
+}
+
 void GPUBufferManager::bindBuffer(geometry::AttributeSemantic semantic)
 {
 	m_opengl_context->gl()->glBindBuffer(GL_ARRAY_BUFFER, m_buffers.at(semantic).handle());

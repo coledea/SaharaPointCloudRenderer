@@ -2,6 +2,7 @@
 
 #include "navigation/NavigationHandler.h"
 #include "rendering/Framebuffer.h"
+#include "rendering/InputEventCache.h"
 #include "rendering/OpenGLContext.h"
 #include "rendering/Scene.h"
 
@@ -25,16 +26,22 @@ public:
 	int deviceScaledWidth() const;
 	int deviceScaledHeight() const;
 
+	static InputEventCache s_event_cache;
+
 signals:
 	void receivedDrop(QDropEvent* e);
 	void resized();
 
 private:
-	QPoint scaledMousePosition(const QPoint& pos) const;
+	QPointF scaledMousePosition(const QPointF& pos) const;
 	void mousePressEvent(QMouseEvent* e) override;
 	void mouseReleaseEvent(QMouseEvent* e) override;
 	void mouseMoveEvent(QMouseEvent* e) override;
 	void wheelEvent(QWheelEvent* e) override;
+
+	void keyPressEvent(QKeyEvent* e) override;
+	void keyReleaseEvent(QKeyEvent* e) override;
+
 	void resizeEvent(QResizeEvent* e) override;
 	bool event(QEvent* e) override;
 	void timerEvent(QTimerEvent* e) override;

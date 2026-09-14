@@ -29,6 +29,7 @@ public:
 signals:
 	void pointCloudAdded(const AbstractPointCloudProvider& pointcloud_provider);
 	void pointCloudRemoved(uint id);
+	void rendererModulesChanged(uint id);
 
 private:
 	OpenGLContext* m_opengl_context;

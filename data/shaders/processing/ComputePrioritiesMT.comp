@@ -76,7 +76,7 @@ bool in_view_frustum(vec3 bbox_min, vec3 bbox_max)
 }
 
 /*===============================================*/
-/* FUNCTIONS FOR DETERMINING LOD                 */
+/* PROJECTION FUNCTION                           */
 /*===============================================*/
 
 ivec2 full_projection(vec3 bbox_min, vec3 bbox_max) // returns (longest screen-space AABB side's full length, longest screen-space AABB side's visible length)

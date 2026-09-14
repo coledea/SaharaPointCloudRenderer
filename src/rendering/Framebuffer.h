@@ -40,6 +40,7 @@ public:
 	void setRequiredAttachments(const std::set<FramebufferAttachmentTypes>& required_attachments);
 
 	void bind() const;
+	void bindAsRead() const;
 	void release() const;
 	void destroy();
 	void blitToDefaultFramebuffer(); // blits the current FBO to the default backbuffer

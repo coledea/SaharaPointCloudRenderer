@@ -18,14 +18,18 @@ public:
 	virtual ~AbstractParameter() = default;
 
 	const QString& name() const;
+	bool isVisible() const noexcept;
+	void setVisible(bool visible);
 
 	virtual void reset() = 0;
 
 signals:
 	void valueChanged();
+	void visibilityChanged(bool visible);
 
 protected:
 	QString m_name;
+	bool m_visible;
 };
 
 }

@@ -1,4 +1,4 @@
-#version 460 core
+#version 450 core
 layout (local_size_x = 32, local_size_y = 32) in;
 
 uniform float u_strength;
@@ -16,7 +16,7 @@ float readDepthNormalized(in ivec2 coords, in ivec2 texture_size)
 {
     float depth = texelFetch(u_input_depth_texture, coords, 0).r;
     depth = depth * 2.0 - 1.0;
-    depth = (2.0 * u_near_plane) / (u_far_plane + u_near_plane - depth * (u_far_plane - u_near_plane));  // linearize and normalize depth
+    depth = (2.0 * u_near_plane) / (u_far_plane + u_near_plane - depth * (u_far_plane - u_near_plane));// linearize and normalize depth
     return depth;
 }
 
@@ -24,8 +24,10 @@ float readDepthNormalized(in ivec2 coords, in ivec2 texture_size)
 void main(void)
 {
     ivec2 texture_size = imageSize(u_input_color_texture);
-    if(gl_GlobalInvocationID.x >= texture_size.x || gl_GlobalInvocationID.y >= texture_size.y)
+    if (gl_GlobalInvocationID.x >= texture_size.x || gl_GlobalInvocationID.y >= texture_size.y)
+    {
         return;
+    }
 
     ivec2 coords = ivec2(gl_GlobalInvocationID.xy);
     float depth = readDepthNormalized(coords, texture_size);
@@ -33,7 +35,7 @@ void main(void)
     float depth_difference = 0.0;
     for (int i = 0; i < 4; i++)
     {
-        ivec2 neighbor_coords = clamp(coords + neighbors[i], ivec2(0,0), texture_size - 1);
+        ivec2 neighbor_coords = clamp(coords + neighbors[i], ivec2(0, 0), texture_size - 1);
         float neighbor_depth = readDepthNormalized(neighbor_coords, texture_size);
         depth_difference += max(0.0, depth - neighbor_depth);
     }

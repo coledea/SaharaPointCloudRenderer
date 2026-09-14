@@ -2,6 +2,7 @@
 
 #include "AbstractPointCloudProvider.h"
 #include "geometry/StaticPointCloud.h"
+#include "io/CSVColumnSettings.h"
 
 #include <filesystem>
 
@@ -11,7 +12,7 @@ namespace sahara::rendering
 class StaticPointCloudProvider : public AbstractPointCloudProvider
 {
 public:
-	StaticPointCloudProvider(const std::filesystem::path& filepath, rendering::OpenGLContext* opengl_context) noexcept;
+	StaticPointCloudProvider(const std::filesystem::path& filepath, const io::CSVColumnSettings& columnSettings, rendering::OpenGLContext* opengl_context) noexcept;
 
 	~StaticPointCloudProvider();
 
@@ -24,6 +25,7 @@ public:
 	void update() override;
 
 	void bindGPUBuffer(geometry::AttributeSemantic semantic) override;
+	GLuint getGPUBuffer(geometry::AttributeSemantic semantic) override;
 	void releaseGPUBuffer(geometry::AttributeSemantic semantic) override;
 
 private:

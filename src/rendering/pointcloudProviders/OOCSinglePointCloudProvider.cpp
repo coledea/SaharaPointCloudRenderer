@@ -9,7 +9,22 @@ namespace sahara::rendering
 {
 
 OOCSinglePointCloudProvider::OOCSinglePointCloudProvider(const std::filesystem::path& filepath, rendering::OpenGLContext* opengl_context, navigation::Camera* camera)
-	: AbstractOOCPointCloudProvider(filepath.filename().string().c_str(), opengl_context, camera)
+	: AbstractOOCPointCloudProvider(filepath.string(), opengl_context, camera)
+{
+	loadOctree(filepath);
+	initializeParameters();
+}
+
+OOCSinglePointCloudProvider::~OOCSinglePointCloudProvider()
+{
+}
+
+PointCloudProviderType OOCSinglePointCloudProvider::type() const noexcept
+{
+	return PointCloudProviderType::OOCSinglePointCloudProvider;
+}
+
+void OOCSinglePointCloudProvider::loadOctree(const std::filesystem::path& filepath)
 {
 	// ############## READ IN META DATA ####################
 	QFile file(filepath);
@@ -54,6 +69,7 @@ OOCSinglePointCloudProvider::OOCSinglePointCloudProvider(const std::filesystem::
 	std::filesystem::path octree_path = filepath;
 	octree_path.replace_filename("nodes.bin");
 	m_octree = std::make_unique<geometry::LodOctree>(octree_path, num_nodes, bounding_box, m_opengl_context);
+	dynamic_cast<geometry::LodOctree*>(m_octree.get())->configureHierarchyPriority(true, 1.0);
 
 	m_draw_command_buffer.setCapacity(m_octree->nodes().size());
 
@@ -61,88 +77,6 @@ OOCSinglePointCloudProvider::OOCSinglePointCloudProvider(const std::filesystem::
 	m_nodes_should_remain_on_gpu.resize(m_octree->nodes().size());
 
 	m_chunk_loader = std::make_unique<io::OOCPointCloudLoader>(filepath.parent_path(), m_number_of_points);
-
-	initializeParameters();
-	initializePriorityFunctionParameters();
-}
-
-OOCSinglePointCloudProvider::~OOCSinglePointCloudProvider()
-{
-}
-
-PointCloudProviderType OOCSinglePointCloudProvider::type() const noexcept
-{
-	return PointCloudProviderType::OOCSinglePointCloudProvider;
-}
-
-void OOCSinglePointCloudProvider::initializePriorityFunctionParameters()
-{
-	m_priority_projection_function_parameter = std::make_unique<EnumParameter>("Priority - Projection", std::initializer_list<QString>{ "None", "Bounding Box", "Diagonal", "Sphere" }, 1);
-	connect(m_priority_projection_function_parameter.get(), &EnumParameter::valueChanged, this, &OOCSinglePointCloudProvider::onPriorityProjectionFunctionChanged);
-	m_parameters.push_back(m_priority_projection_function_parameter.get());
-	onPriorityProjectionFunctionChanged();
-
-	m_priority_projection_factor_parameter = std::make_unique<RangeParameter<float>>("Priority - Projection Factor", 1.0, 0.0, 5.0, 0.001);
-	connect(m_priority_projection_factor_parameter.get(), &RangeParameter<float>::valueChanged, this, &OOCSinglePointCloudProvider::onPriorityProjectionFactorChanged);
-	m_parameters.push_back(m_priority_projection_factor_parameter.get());
-	onPriorityProjectionFactorChanged();
-
-	m_priority_distance_function_parameter = std::make_unique<EnumParameter>("Priority - Distance", std::initializer_list<QString>{ "None", "Center", "Nearest Corner" }, 0);
-	connect(m_priority_distance_function_parameter.get(), &EnumParameter::valueChanged, this, &OOCSinglePointCloudProvider::onPriorityDistanceFunctionChanged);
-	m_parameters.push_back(m_priority_distance_function_parameter.get());
-	onPriorityDistanceFunctionChanged();
-
-	m_priority_distance_factor_parameter = std::make_unique<RangeParameter<float>>("Priority - Distance Factor", 1.0, 0.0, 5.0, 0.001);
-	connect(m_priority_distance_factor_parameter.get(), &RangeParameter<float>::valueChanged, this, &OOCSinglePointCloudProvider::onPriorityDistanceFactorChanged);
-	m_parameters.push_back(m_priority_distance_factor_parameter.get());
-	onPriorityDistanceFactorChanged();
-
-	m_priority_centrality_factor_parameter = std::make_unique<RangeParameter<float>>("Priority - Centrality Factor", 0.0, 0.0, 5.0, 0.001);
-	connect(m_priority_centrality_factor_parameter.get(), &RangeParameter<float>::valueChanged, this, &OOCSinglePointCloudProvider::onPriorityCentralityFactorChanged);
-	m_parameters.push_back(m_priority_centrality_factor_parameter.get());
-	onPriorityCentralityFactorChanged();
-
-	m_priority_use_parent_child_parameter = std::make_unique<Parameter<bool>>("Priority - Consider Parent/Children", false);
-	m_parameters.push_back(m_priority_use_parent_child_parameter.get());
-
-	m_priority_parent_child_factor_parameter = std::make_unique<RangeParameter<float>>("Priority - Parent/Child Factor", 1.0, 0.0, 5.0, 0.001);
-	m_parameters.push_back(m_priority_parent_child_factor_parameter.get());
-
-	m_priority_use_recency_parameter = std::make_unique<Parameter<bool>>("Priority - Recency of Use", false);
-	connect(m_priority_use_recency_parameter.get(), &Parameter<bool>::valueChanged, this, &OOCSinglePointCloudProvider::onPriorityUseRecencyChanged);
-	m_parameters.push_back(m_priority_use_recency_parameter.get());
-	onPriorityUseRecencyChanged();
-}
-
-void OOCSinglePointCloudProvider::onPriorityProjectionFunctionChanged()
-{
-	dynamic_cast<geometry::LodOctree*>(m_octree.get())->setPriorityProjectionFunction(static_cast<geometry::NodePriorityProjectionFunction>(m_priority_projection_function_parameter->value()));
-	onProjectedSizeThresholdChanged();
-}
-
-void OOCSinglePointCloudProvider::onPriorityDistanceFunctionChanged()
-{
-	dynamic_cast<geometry::LodOctree*>(m_octree.get())->setPriorityDistanceFunction(static_cast<geometry::NodePriorityDistanceFunction>(m_priority_distance_function_parameter->value()));
-}
-
-void OOCSinglePointCloudProvider::onPriorityProjectionFactorChanged()
-{
-	dynamic_cast<geometry::LodOctree*>(m_octree.get())->setPriorityProjectionFactor(m_priority_projection_factor_parameter->value());
-}
-
-void OOCSinglePointCloudProvider::onPriorityDistanceFactorChanged()
-{
-	dynamic_cast<geometry::LodOctree*>(m_octree.get())->setPriorityDistanceFactor(m_priority_distance_factor_parameter->value());
-}
-
-void OOCSinglePointCloudProvider::onPriorityCentralityFactorChanged()
-{
-	dynamic_cast<geometry::LodOctree*>(m_octree.get())->setPriorityCentralityFactor(m_priority_centrality_factor_parameter->value());
-}
-
-void OOCSinglePointCloudProvider::onPriorityUseRecencyChanged()
-{
-	dynamic_cast<geometry::LodOctree*>(m_octree.get())->setPriorityUseRecency(m_priority_use_recency_parameter->value());
 }
 
 }

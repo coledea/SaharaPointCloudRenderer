@@ -4,43 +4,43 @@ namespace sahara::utils
 {
 
 // These defines are used by colorizers/postprocessors to toggle the passthrough of vertex attributes to the fragment shader.
-const std::unordered_map<geometry::AttributeSemantic, QString> ShaderStringsFactory::VERTEX_SHADER_OUTPUT_DEFINE_STRINGS = {
-	{ geometry::AttributeSemantic::ID, "#define VERTEX_SHADER_OUTPUT_ID" },
-	{ geometry::AttributeSemantic::Position, "#define VERTEX_SHADER_OUTPUT_POSITION" },
-	{ geometry::AttributeSemantic::Color, "#define VERTEX_SHADER_OUTPUT_COLOR" },
-	{ geometry::AttributeSemantic::Normal, "#define VERTEX_SHADER_OUTPUT_NORMAL" },
-	{ geometry::AttributeSemantic::SegmentID, "#define VERTEX_SHADER_OUTPUT_SEGMENT" },
-	{ geometry::AttributeSemantic::Custom0, "#define VERTEX_SHADER_OUTPUT_CUSTOM" },
-	{ geometry::AttributeSemantic::Custom1, "#define VERTEX_SHADER_OUTPUT_CUSTOM" },
-	{ geometry::AttributeSemantic::Custom2, "#define VERTEX_SHADER_OUTPUT_CUSTOM" },
-	{ geometry::AttributeSemantic::Custom3, "#define VERTEX_SHADER_OUTPUT_CUSTOM" },
-	{ geometry::AttributeSemantic::Custom4, "#define VERTEX_SHADER_OUTPUT_CUSTOM" },
-	{ geometry::AttributeSemantic::Custom5, "#define VERTEX_SHADER_OUTPUT_CUSTOM" },
-	{ geometry::AttributeSemantic::Custom6, "#define VERTEX_SHADER_OUTPUT_CUSTOM" },
-	{ geometry::AttributeSemantic::Custom7, "#define VERTEX_SHADER_OUTPUT_CUSTOM" },
-	{ geometry::AttributeSemantic::Custom8, "#define VERTEX_SHADER_OUTPUT_CUSTOM" },
-	{ geometry::AttributeSemantic::Custom9, "#define VERTEX_SHADER_OUTPUT_CUSTOM" },
-	{ geometry::AttributeSemantic::Custom10, "#define VERTEX_SHADER_OUTPUT_CUSTOM" }
+const std::unordered_map<geometry::AttributeSemantic, QString> ShaderStringsFactory::ATTRIBUTE_INPUT_DEFINE_STRINGS = {
+	{ geometry::AttributeSemantic::ID, "#define ATTRIBUTE_INPUT_ID" },
+	{ geometry::AttributeSemantic::Position, "#define ATTRIBUTE_INPUT_POSITION" },
+	{ geometry::AttributeSemantic::Color, "#define ATTRIBUTE_INPUT_COLOR" },
+	{ geometry::AttributeSemantic::Normal, "#define ATTRIBUTE_INPUT_NORMAL" },
+	{ geometry::AttributeSemantic::SegmentID, "#define ATTRIBUTE_INPUT_SEGMENT" },
+	{ geometry::AttributeSemantic::Custom0, "#define ATTRIBUTE_INPUT_CUSTOM" },
+	{ geometry::AttributeSemantic::Custom1, "#define ATTRIBUTE_INPUT_CUSTOM" },
+	{ geometry::AttributeSemantic::Custom2, "#define ATTRIBUTE_INPUT_CUSTOM" },
+	{ geometry::AttributeSemantic::Custom3, "#define ATTRIBUTE_INPUT_CUSTOM" },
+	{ geometry::AttributeSemantic::Custom4, "#define ATTRIBUTE_INPUT_CUSTOM" },
+	{ geometry::AttributeSemantic::Custom5, "#define ATTRIBUTE_INPUT_CUSTOM" },
+	{ geometry::AttributeSemantic::Custom6, "#define ATTRIBUTE_INPUT_CUSTOM" },
+	{ geometry::AttributeSemantic::Custom7, "#define ATTRIBUTE_INPUT_CUSTOM" },
+	{ geometry::AttributeSemantic::Custom8, "#define ATTRIBUTE_INPUT_CUSTOM" },
+	{ geometry::AttributeSemantic::Custom9, "#define ATTRIBUTE_INPUT_CUSTOM" },
+	{ geometry::AttributeSemantic::Custom10, "#define ATTRIBUTE_INPUT_CUSTOM" }
 };
 
 // These defines are used by postprocessors to toggle the write of vertex attributes to framebuffer attachments.
-const std::unordered_map<geometry::AttributeSemantic, QString> ShaderStringsFactory::FRAGMENT_SHADER_OUTPUT_DEFINE_STRINGS = {
-	{ geometry::AttributeSemantic::ID, "#define FRAGMENT_SHADER_OUTPUT_ID\n" },
-	{ geometry::AttributeSemantic::Position, "#define FRAGMENT_SHADER_OUTPUT_POSITION\n" },
-	//	{ geometry::AttributeSemantic::Color, "#define FRAGMENT_SHADER_OUTPUT_COLOR\n" },   // color is always written
-	{ geometry::AttributeSemantic::Normal, "#define FRAGMENT_SHADER_OUTPUT_NORMAL\n" },
-	{ geometry::AttributeSemantic::SegmentID, "#define FRAGMENT_SHADER_OUTPUT_SEGMENT\n" },
-	{ geometry::AttributeSemantic::Custom0, "#define FRAGMENT_SHADER_OUTPUT_CUSTOM\n" },
-	{ geometry::AttributeSemantic::Custom1, "#define FRAGMENT_SHADER_OUTPUT_CUSTOM\n" },
-	{ geometry::AttributeSemantic::Custom2, "#define FRAGMENT_SHADER_OUTPUT_CUSTOM\n" },
-	{ geometry::AttributeSemantic::Custom3, "#define FRAGMENT_SHADER_OUTPUT_CUSTOM\n" },
-	{ geometry::AttributeSemantic::Custom4, "#define FRAGMENT_SHADER_OUTPUT_CUSTOM\n" },
-	{ geometry::AttributeSemantic::Custom5, "#define FRAGMENT_SHADER_OUTPUT_CUSTOM\n" },
-	{ geometry::AttributeSemantic::Custom6, "#define FRAGMENT_SHADER_OUTPUT_CUSTOM\n" },
-	{ geometry::AttributeSemantic::Custom7, "#define FRAGMENT_SHADER_OUTPUT_CUSTOM\n" },
-	{ geometry::AttributeSemantic::Custom8, "#define FRAGMENT_SHADER_OUTPUT_CUSTOM\n" },
-	{ geometry::AttributeSemantic::Custom9, "#define FRAGMENT_SHADER_OUTPUT_CUSTOM\n" },
-	{ geometry::AttributeSemantic::Custom10, "#define FRAGMENT_SHADER_OUTPUT_CUSTOM\n" }
+const std::unordered_map<geometry::AttributeSemantic, QString> ShaderStringsFactory::ATTRIBUTE_OUTPUT_DEFINE_STRINGS = {
+	{ geometry::AttributeSemantic::ID, "#define ATTRIBUTE_OUTPUT_ID" },
+	{ geometry::AttributeSemantic::Position, "#define ATTRIBUTE_OUTPUT_POSITION" },
+	//	{ geometry::AttributeSemantic::Color, "#define ATTRIBUTE_OUTPUT_COLOR" },   // color is always written
+	{ geometry::AttributeSemantic::Normal, "#define ATTRIBUTE_OUTPUT_NORMAL" },
+	{ geometry::AttributeSemantic::SegmentID, "#define ATTRIBUTE_OUTPUT_SEGMENT" },
+	{ geometry::AttributeSemantic::Custom0, "#define ATTRIBUTE_OUTPUT_CUSTOM" },
+	{ geometry::AttributeSemantic::Custom1, "#define ATTRIBUTE_OUTPUT_CUSTOM" },
+	{ geometry::AttributeSemantic::Custom2, "#define ATTRIBUTE_OUTPUT_CUSTOM" },
+	{ geometry::AttributeSemantic::Custom3, "#define ATTRIBUTE_OUTPUT_CUSTOM" },
+	{ geometry::AttributeSemantic::Custom4, "#define ATTRIBUTE_OUTPUT_CUSTOM" },
+	{ geometry::AttributeSemantic::Custom5, "#define ATTRIBUTE_OUTPUT_CUSTOM" },
+	{ geometry::AttributeSemantic::Custom6, "#define ATTRIBUTE_OUTPUT_CUSTOM" },
+	{ geometry::AttributeSemantic::Custom7, "#define ATTRIBUTE_OUTPUT_CUSTOM" },
+	{ geometry::AttributeSemantic::Custom8, "#define ATTRIBUTE_OUTPUT_CUSTOM" },
+	{ geometry::AttributeSemantic::Custom9, "#define ATTRIBUTE_OUTPUT_CUSTOM" },
+	{ geometry::AttributeSemantic::Custom10, "#define ATTRIBUTE_OUTPUT_CUSTOM" }
 };
 
 const std::unordered_map<geometry::AttributeType, QString> ShaderStringsFactory::ATTRIBUTE_TYPE_SUFFIXES = {
@@ -51,10 +51,10 @@ const std::unordered_map<geometry::AttributeType, QString> ShaderStringsFactory:
 	{ geometry::AttributeType::Color, "_VEC" }
 };
 
-QString ShaderStringsFactory::vertexShaderOutputDefineString(geometry::AttributeSemantic semantic, geometry::AttributeType type)
+QString ShaderStringsFactory::attributeInputDefineString(geometry::AttributeSemantic semantic, geometry::AttributeType type)
 {
-	QString result = VERTEX_SHADER_OUTPUT_DEFINE_STRINGS.at(semantic);
-	if (isCustom(semantic))
+	QString result = ATTRIBUTE_INPUT_DEFINE_STRINGS.at(semantic);
+	if (attributeIsCustom(semantic))
 	{
 		result += ATTRIBUTE_TYPE_SUFFIXES.at(type);
 	}
@@ -62,10 +62,10 @@ QString ShaderStringsFactory::vertexShaderOutputDefineString(geometry::Attribute
 	return result;
 }
 
-QString ShaderStringsFactory::fragmentShaderOutputDefineString(geometry::AttributeSemantic semantic, geometry::AttributeType type)
+QString ShaderStringsFactory::attributeOutputDefineString(geometry::AttributeSemantic semantic, geometry::AttributeType type)
 {
-	QString result = FRAGMENT_SHADER_OUTPUT_DEFINE_STRINGS.at(semantic);
-	if (isCustom(semantic))
+	QString result = ATTRIBUTE_OUTPUT_DEFINE_STRINGS.at(semantic);
+	if (attributeIsCustom(semantic))
 	{
 		result += ATTRIBUTE_TYPE_SUFFIXES.at(type);
 	}
@@ -110,6 +110,26 @@ QString ShaderStringsFactory::readShaderFile(const QString& file_path)
 		return QString();
 	}
 	return shader_file.readAll();
+}
+
+void ShaderStringsFactory::compileVertexFragmentShader(QOpenGLShaderProgram* shader_program, const QString& vertex_shader_path, const QString& fragment_shader_path)
+{
+	shader_program->removeAllShaders();
+
+	if (!shader_program->addShaderFromSourceCode(QOpenGLShader::Vertex, readShaderFile(vertex_shader_path)))
+	{
+		qDebug() << "Vertex shader compilation error:" << shader_program->log();
+	}
+
+	if (!shader_program->addShaderFromSourceCode(QOpenGLShader::Fragment, readShaderFile(fragment_shader_path)))
+	{
+		qDebug() << "Fragment shader compilation error:" << shader_program->log();
+	}
+
+	if (!shader_program->link())
+	{
+		qDebug() << "Program linking error!" << shader_program->log();
+	}
 }
 
 }
