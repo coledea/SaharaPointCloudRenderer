@@ -1,7 +1,7 @@
 # README ![image](./data/icons/sahara.png)
 This branch contains the version of the Sahara Point Cloud Renderer used for evaluating the rendering approach presented in our paper:
 
-**Out-of-Core Rendering of Multi-Temporal Point Clouds**, Wegen et al., 2026.
+[**Out-of-Core Rendering of Multi-Temporal Point Clouds**](https://doi.org/10.2312/egpgv.20261002), Wegen et al., 2026.
 
 For the most recent version of the renderer, please use the [`main`](../../tree/main) branch.
 It omits several paper-specific features, such as benchmarking functionality, and reflects the current state of development. 
